@@ -141,6 +141,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         outcome = handler(args)
         result, diag = outcome.result, outcome.diagnostics_dir
+    except UsageError as exc:
+        result = Result(
+            command=args.command,
+            outcome=INVALID,
+            reason_codes=[OCS_INPUT_INVALID],
+            messages=[f"usage error: {exc}"],
+        )
     except PathRefused as exc:
         result = Result(
             command=args.command, outcome=INVALID, reason_codes=[OCS_PATHS], messages=[str(exc)]
