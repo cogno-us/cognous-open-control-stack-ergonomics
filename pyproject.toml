@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ocs"
+version = "0.1.0"
+description = "Front door to the Cognous Open Control Stack: offline demo, evidence render, checks. It relays component verdicts and decides nothing."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Cognous" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+# The four components, pinned to the commits in the hub's component-lock.json
+# (recorded in src/ocs/fixtures/customer-service/provenance.json). Direct
+# references: this extra is for installing from this repository, not for an
+# index upload. Nothing is published from this repository.
+stack = [
+    "agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@46c950bed37fe3812000895430bc0312d29e37ce",
+    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@d3dadee70bd319812b207389ab1e0f6efe511916",
+    "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@459e4ba62fca49364aebb0050cd5fb2dd5a71bfa",
+    "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@b4baccd823d2a73be276c1de745b19cf7c56a0d6",
+]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "pytest-socket>=0.7",
+    "mypy>=1.10",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+ocs = "ocs.cli:main"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ocs"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/ocs", "tests", "docs", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--disable-socket --cov=ocs --cov-report=term-missing --cov-fail-under=80"
+markers = ["integration: runs the real pinned component commands (needs the stack extra)"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+files = ["src", "tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S603", "S607"]
+"src/ocs/demo.py" = ["S603"]
+"tools/*" = ["E501", "E741", "S603", "S607", "SIM", "B", "RUF"]

@@ -1,0 +1,42 @@
+"""Bundled example fixtures, loaded as package data with importlib.resources."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from importlib.resources import files
+from typing import Any
+
+from ocs import EXAMPLE_NAME
+
+FIXTURE_FILES = ("manifest.json", "run-record.json", "replay-bundle.json", "evidence-pack.json")
+
+
+class FixtureIntegrityError(Exception):
+    """A bundled fixture does not match its recorded hash."""
+
+
+def _root() -> Any:
+    return files("ocs").joinpath("fixtures", EXAMPLE_NAME)
+
+
+def provenance() -> dict[str, Any]:
+    data = json.loads(_root().joinpath("provenance.json").read_bytes())
+    if not isinstance(data, dict):
+        raise FixtureIntegrityError("provenance.json is not an object")
+    return data
+
+
+def example_version() -> str:
+    return str(provenance()["example_version"])
+
+
+def read_fixture(name: str) -> bytes:
+    """Return a fixture's bytes after checking them against the recorded hash."""
+    if name not in FIXTURE_FILES:
+        raise FixtureIntegrityError(f"unknown fixture {name!r}")
+    data: bytes = _root().joinpath(name).read_bytes()
+    recorded = provenance()["bundled"].get(name)
+    if hashlib.sha256(data).hexdigest() != recorded:
+        raise FixtureIntegrityError(f"fixture {name} does not match its recorded hash")
+    return data

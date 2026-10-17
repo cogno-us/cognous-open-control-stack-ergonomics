@@ -1,5 +1,7 @@
 # CLI contract (draft 0.1.0)
 
+Implementation corrections (Phase 1) are marked **Correction** below.
+
 Status: draft for owner review. Command names and codes are proposals, not existing Open Control Stack interfaces. Nothing is frozen.
 
 ## 1. Purpose
@@ -61,9 +63,9 @@ With `--format json`, one JSON object per run on standard output, nothing else.
 ```
 
 Rules:
-- `outcome` is one of `pass`, `review`, `not_evaluated`, `fail`, `invalid`.
+- `outcome` is one of `pass`, `review`, `not_evaluated`, `fail`, `invalid`, `error`. **Correction:** `error` is added because exit 4 (internal or execution error) had no outcome in the first draft. Exits: pass 0, review 0 (1 under `--strict`), not_evaluated 3, fail 1, invalid 2, error 4.
 - Consumers choose a parser by `envelope_version`, never by which keys happen to be present. A consumer that does not know the version must treat the result as `invalid`.
-- `verdict_source` is required whenever a component produced the verdict. `ocs` adds no verdict of its own.
+- `verdict_source` is required whenever a component produced the verdict. `ocs` adds no verdict of its own. **Correction:** a command that chains several components (`demo`) names in `verdict_source` the component whose decision it evidences (the control plane, for the blocked send) and lists every step under `extensions["x-steps"]`. A command that only reads and formats (`evidence render`) produced no component verdict and carries no `verdict_source`; its `does_not_prove` says the pack was not validated by that command. `contract_version` is the installed component package version, not an ODES draft label.
 - `does_not_prove` is required on every `pass`. Success text always states the boundary, for example `artifact-internal validation passed`.
 - `messages` are human text with control characters stripped. Nothing machine-readable lives in them.
 - Unknown members are refused by `ocs`'s own validators and preserved only under `extensions` with `x-` names, the same model as the ODES contracts.
@@ -100,6 +102,9 @@ Namespace `OCS_*`, stable once published; a code is never reused for a different
 | `OCS_ARCHIVAL_ONLY` | Structural-only historical artifact; exit 2, never a pass |
 | `OCS_NOT_APPLICABLE` | Command does not apply to this subject |
 | `OCS_INTERNAL` | Unexpected error |
+| `OCS_INPUT_INVALID` | Input does not parse, lacks a field the command needs, or the command line is malformed (**Correction:** added) |
+| `OCS_DEMO_EXPECTATION` | A demo step returned an unexpected exit code or an expected artifact fact did not hold (**Correction:** added) |
+| `OCS_BLOCKING_FINDING` | A component recorded a blocking decision; propagated as exit 1 under `--strict` (**Correction:** added) |
 
 Component reason codes (for example the control plane's `runtime-authority-reasons/0.1` registry) are passed through unchanged in `verdict_source`, not remapped.
 
