@@ -1,0 +1,176 @@
+{
+  "pack_id": "ep-cs-demo-001",
+  "pack_version": "0.1",
+  "title": "Customer Service Agent: Demo Evidence Pack (synthetic)",
+  "generated_at": "2026-07-01T10:20:00Z",
+  "review_status": "in_review",
+  "agent_overview": {
+    "agent_name": "CustomerServiceAgent",
+    "agent_description": "Reads CRM records and drafts outbound customer emails. Human review is required before any email is sent.",
+    "business_purpose": "Automate routine customer query responses by reading CRM records and drafting reply emails for human review and approval before sending.",
+    "owner": "Head of Customer Operations",
+    "business_unit": "Customer Experience",
+    "user_population": "Customer service team members and supervisors",
+    "lifecycle_stage": "pilot"
+  },
+  "deployment_context": {
+    "environment": "staging",
+    "deployment_name": "cs-agent-demo",
+    "deployment_date": "2026-06-15",
+    "systems_touched": [
+      "CRM Platform",
+      "Email Gateway"
+    ],
+    "data_domains": [
+      "customer-data",
+      "communication-records"
+    ],
+    "geographic_scope": "North America",
+    "notes": "Synthetic demo fixture. Not a deployment record."
+  },
+  "tool_inventory": [
+    {
+      "tool_name": "crm_read",
+      "description": "Read customer records from the CRM.",
+      "external_system": "CRM Platform",
+      "data_classification": "confidential",
+      "access_mode": "read-only",
+      "control_status": "implemented"
+    },
+    {
+      "tool_name": "notes_search",
+      "description": "Search account notes.",
+      "external_system": "CRM Platform",
+      "data_classification": "confidential",
+      "access_mode": "read-only",
+      "control_status": "implemented"
+    },
+    {
+      "tool_name": "email_send",
+      "description": "Send outbound email to customers.",
+      "external_system": "Email Gateway",
+      "data_classification": "confidential",
+      "access_mode": "write",
+      "control_status": "implemented"
+    }
+  ],
+  "action_inventory": [
+    {
+      "action_name": "crm_read",
+      "tool_name": "crm_read",
+      "action_type": "read",
+      "description": "Retrieve a customer record and interaction history from the CRM.",
+      "authority_required": false,
+      "review_required": false,
+      "reliance_required": true,
+      "default_posture": "allowed",
+      "control_status": "implemented"
+    },
+    {
+      "action_name": "notes_search",
+      "tool_name": "notes_search",
+      "action_type": "read",
+      "description": "Search customer account notes.",
+      "authority_required": false,
+      "review_required": false,
+      "reliance_required": true,
+      "default_posture": "allowed",
+      "control_status": "implemented"
+    },
+    {
+      "action_name": "email_send",
+      "tool_name": "email_send",
+      "action_type": "external_send",
+      "description": "Send a drafted reply email to a customer. Requires authority grant and human review before execution.",
+      "authority_required": true,
+      "review_required": true,
+      "reliance_required": false,
+      "default_posture": "blocked",
+      "control_status": "implemented"
+    }
+  ],
+  "authority_model": {
+    "summary": "Outbound communication requires an explicit authority grant from a customer service supervisor. Authority expires after 8 hours and must be renewed per-session.",
+    "authority_scopes": [
+      "outbound_email"
+    ],
+    "privileged_action_types": [
+      "external_send"
+    ],
+    "expiration_required": true,
+    "human_approval_required": true,
+    "notes": "Authority grants are logged in the CRM audit trail."
+  },
+  "policy_controls": [
+    {
+      "control_name": "Human Review Gate for Email Send",
+      "description": "All outbound emails drafted by the agent must be reviewed and approved by a human customer service representative before sending.",
+      "control_status": "implemented",
+      "evidence_reference": "control-log-ep-cs-2026-001",
+      "notes": null
+    },
+    {
+      "control_name": "CRM Read Audit Logging",
+      "description": "All CRM read operations are logged with agent identity, customer ID, and timestamp.",
+      "control_status": "implemented",
+      "evidence_reference": "crm-audit-log-ep-cs-2026-001",
+      "notes": null
+    }
+  ],
+  "blocked_actions": [
+    {
+      "action_name": "email_send",
+      "action_type": "external_send",
+      "tool_name": "email_send",
+      "count": 1,
+      "reason_summary": "Outbound email send blocked: outbound-send authority is missing.",
+      "evidence_reference": "run-record.json#blocked-cs-demo-001"
+    }
+  ],
+  "reliance_summary": [
+    {
+      "source_name": "CRM Platform",
+      "source_type": "database",
+      "count": 2,
+      "scope_summary": "One CRM read and one account-notes search for customer C-7823.",
+      "evidence_reference": "run-record.json#reliance_records"
+    }
+  ],
+  "replay_bundles": [
+    {
+      "bundle_id": "bundle-cs-demo-001",
+      "run_id": "run-cs-demo-001",
+      "status": "available",
+      "generated_at": "2026-07-01T10:16:00Z",
+      "signed": false,
+      "redacted": false,
+      "validation_status": "valid",
+      "evidence_reference": "replay-bundle.json"
+    }
+  ],
+  "validation_summary": {
+    "valid_bundle_count": 1,
+    "invalid_bundle_count": 0,
+    "warning_count": 1,
+    "error_count": 0,
+    "summary": "One replay bundle validated with one warning (unsigned)."
+  },
+  "redaction_exports": [],
+  "risk_register": [
+    {
+      "risk_id": "risk-cs-demo-001",
+      "title": "Outbound Communication Without Authority",
+      "description": "Agent may attempt to send emails without outbound-send authority. Blocked once in this synthetic run.",
+      "severity": "high",
+      "status": "mitigated",
+      "mitigation": "Outbound send is blocked without authority; the block is recorded.",
+      "owner": "Head of Customer Operations",
+      "evidence_reference": "run-record.json#blocked-cs-demo-001"
+    }
+  ],
+  "review_records": [],
+  "metadata": {
+    "synthetic": true,
+    "notes": "Synthetic demo fixture."
+  }
+}

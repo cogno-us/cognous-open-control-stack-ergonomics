@@ -1,6 +1,6 @@
 # Cognous Open Control Stack: Ergonomics
 
-Status: design phase (Phase 0). No code yet. Nothing here changes any Open Control Stack component.
+Status: Phase 1 in progress (skeleton, offline demo, evidence render). Nothing here changes any Open Control Stack component, and nothing is published from this repository.
 
 This repository is the front door to the Open Control Stack: one command to install, try, check and wire into CI. It does none of the governing. The components still make every authority decision, refusal, replay and evidence record. If this repository disappeared, the stack would behave exactly as before.
 
@@ -17,7 +17,19 @@ This repository is the front door to the Open Control Stack: one command to inst
 
 Repository: `cognous-open-control-stack-ergonomics`. Command: `ocs` (subject to a package-name check before any publication). Publication is not authorized; nothing is released from this repository while the stack's publication decision is on HOLD.
 
+## Quick start
+
+```
+python -m venv .venv && . .venv/bin/activate
+pip install ".[stack]"     # the four components, pinned to the hub's component-lock commits
+ocs --version
+```
+
+The `stack` extra uses direct git references, so it is for installing from this repository, not for an index upload.
+
 ## Contents
+
+- [`src/ocs/`](src/ocs): the package. `ocs.lock` holds the component pins; `ocs/fixtures/customer-service/` holds the bundled example and its `provenance.json`.
 
 - [`docs/cli-contract.md`](docs/cli-contract.md): command set, exit codes, JSON result envelope, diagnostics file, reason-code naming. This is the Phase 0 deliverable.
 

@@ -1,0 +1,199 @@
+{
+  "manifest_version": "1.0",
+  "manifest_id": "customer-service-agent-v1",
+  "agent_name": "Customer Service Agent",
+  "agent_description": "Handles customer inquiries by reading CRM records, searching notes, drafting communications, and sending approved emails.",
+  "owner": "customer-experience-team",
+  "environment": "production",
+  "default_action": "escalate",
+  "tools": [
+    {
+      "tool_name": "crm_tool",
+      "description": "Reads and queries the CRM system.",
+      "allowed": true,
+      "external_system": null,
+      "data_classification": "confidential"
+    },
+    {
+      "tool_name": "notes_tool",
+      "description": "Searches customer notes and interaction history.",
+      "allowed": true,
+      "external_system": null,
+      "data_classification": "confidential"
+    },
+    {
+      "tool_name": "email_tool",
+      "description": "Drafts and sends emails to customers.",
+      "allowed": true,
+      "external_system": "smtp.internal",
+      "data_classification": "confidential"
+    }
+  ],
+  "actions": [
+    {
+      "action_name": "crm_read",
+      "tool_name": "crm_tool",
+      "action_type": "read",
+      "description": "Read a customer record from the CRM system.",
+      "default_action": null,
+      "authority_required": [],
+      "review_requirement": {
+        "mode": "none"
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": ["database"],
+        "description": "CRM read must be recorded as a reliance source."
+      },
+      "payload_policy": {
+        "required_fields": ["customer_id"],
+        "optional_fields": ["include_history"],
+        "sensitive_fields": ["customer_id"],
+        "forbidden_fields": []
+      },
+      "redaction_hints": [
+        {
+          "field_path": "customer_id",
+          "reason": "Customer identifier must be redacted in exported records.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": ["crm", "read"],
+      "metadata": {}
+    },
+    {
+      "action_name": "notes_search",
+      "tool_name": "notes_tool",
+      "action_type": "read",
+      "description": "Search customer notes and interaction history.",
+      "default_action": null,
+      "authority_required": [],
+      "review_requirement": {
+        "mode": "none"
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": ["database"],
+        "description": "Notes search must be recorded as a reliance source."
+      },
+      "payload_policy": {
+        "required_fields": ["customer_id"],
+        "optional_fields": ["query", "limit"],
+        "sensitive_fields": ["customer_id"],
+        "forbidden_fields": []
+      },
+      "redaction_hints": [
+        {
+          "field_path": "customer_id",
+          "reason": "Customer identifier must be redacted in exported records.",
+          "replacement": "[REDACTED]"
+        },
+        {
+          "field_path": "account_notes",
+          "reason": "Account notes may contain sensitive customer data.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": ["notes", "read"],
+      "metadata": {}
+    },
+    {
+      "action_name": "email_draft",
+      "tool_name": "email_tool",
+      "action_type": "write",
+      "description": "Draft an email to a customer. The draft is not sent until approved.",
+      "default_action": "escalate",
+      "authority_required": [
+        {
+          "scope": "email.draft.customer",
+          "description": "Permission to draft outbound emails to customers.",
+          "required": true,
+          "source": "customer-experience-team"
+        }
+      ],
+      "review_requirement": {
+        "mode": "draft_first",
+        "reason": "All outbound emails must be reviewed before sending."
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": ["tool", "database", "user_input"],
+        "description": "Email draft should record the sources used to prepare the message."
+      },
+      "payload_policy": {
+        "required_fields": ["to", "subject", "body"],
+        "optional_fields": ["cc", "bcc"],
+        "sensitive_fields": ["to", "body"],
+        "forbidden_fields": []
+      },
+      "redaction_hints": [
+        {
+          "field_path": "to",
+          "reason": "Recipient email address must be redacted in exported records.",
+          "replacement": "[REDACTED]"
+        },
+        {
+          "field_path": "body",
+          "reason": "Email body may contain sensitive customer information.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": ["email", "draft"],
+      "metadata": {}
+    },
+    {
+      "action_name": "email_send",
+      "tool_name": "email_tool",
+      "action_type": "external_send",
+      "description": "Send an approved email to a customer via the external email system.",
+      "default_action": null,
+      "authority_required": [
+        {
+          "scope": "email.send.customer",
+          "description": "Permission to send outbound emails to customers.",
+          "required": true,
+          "source": "customer-experience-team"
+        }
+      ],
+      "review_requirement": {
+        "mode": "approval_required",
+        "reviewer_role": "customer-service-supervisor",
+        "reason": "All outbound customer emails require supervisor approval before sending."
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": ["tool", "user_input"],
+        "description": "Email send must record the approved draft as a reliance source."
+      },
+      "payload_policy": {
+        "required_fields": ["to", "subject", "body"],
+        "optional_fields": ["cc"],
+        "sensitive_fields": ["to", "body"],
+        "forbidden_fields": ["bcc"]
+      },
+      "redaction_hints": [
+        {
+          "field_path": "to",
+          "reason": "Recipient email address must be redacted in exported records.",
+          "replacement": "[REDACTED]"
+        },
+        {
+          "field_path": "body",
+          "reason": "Email body may contain sensitive customer information.",
+          "replacement": "[REDACTED]"
+        },
+        {
+          "field_path": "customer_id",
+          "reason": "Customer identifier must be redacted in exported records.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": ["email", "send", "external"],
+      "metadata": {}
+    }
+  ],
+  "metadata": {
+    "created": "2026-01-01",
+    "version_notes": "Initial production manifest for customer service agent."
+  }
+}

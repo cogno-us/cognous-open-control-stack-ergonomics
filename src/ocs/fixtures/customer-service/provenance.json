@@ -1,0 +1,55 @@
+{
+  "example_name": "customer-service",
+  "example_version": "0.1.0",
+  "synthetic": true,
+  "note": "The hub example is narrative only. manifest.json is a byte copy of the component example; the other three are derived from component examples and re-keyed so one synthetic run is consistent across layers. Produced by tools/derive_fixtures.py.",
+  "hub": {
+    "repository": "cogno-us/cognous-open-control-stack",
+    "commit": "afca5bbdfac1b8a5073b8db9f1f108243e14d451",
+    "example_path": "examples/customer-service-end-to-end",
+    "example_files": {
+      "README.md": "71ee91bc3b574849354694b6624c4dc2e7c1aba6648103a5c878a23ecf9d010e",
+      "artifact-map.md": "71fa582e760739b3231e6061d7cde1db43de6eb9d52cf4f840fb904e3f875c6d"
+    },
+    "component_lock_sha256": "dc66aafeb15eb2d5695b2217019775a1a2e517b3a6ab55b07c1b37349d8ee5cc"
+  },
+  "sources": {
+    "manifest.json": {
+      "component": "action_manifest",
+      "repository": "cogno-us/cognous-action-manifest",
+      "commit": "46c950bed37fe3812000895430bc0312d29e37ce",
+      "path": "examples/customer_service_agent.manifest.json",
+      "sha256": "848ad8e852340c143ea8daf4300dab8a34d252cd730ff08e41c641482e12a1f0"
+    },
+    "run-record.json": {
+      "component": "control_plane",
+      "repository": "cogno-us/cognous-control-plane",
+      "commit": "d3dadee70bd319812b207389ab1e0f6efe511916",
+      "path": "examples/sample_run_record.json",
+      "sha256": "265833e08f3d02f504f06d9b148facb92fd87743c70634da9c59e0d47d501c45"
+    },
+    "replay-bundle.json": {
+      "component": "replay_bundle",
+      "repository": "cogno-us/cognous-replay-bundle",
+      "commit": "459e4ba62fca49364aebb0050cd5fb2dd5a71bfa",
+      "path": "examples/customer_service_replay_bundle.json",
+      "sha256": "47a59f516d3076c547f75b927da60565e0306002c181abc658375e992de0c880"
+    },
+    "evidence-pack.json": {
+      "component": "governance_evidence_pack",
+      "repository": "cogno-us/cognous-governance-evidence-pack",
+      "commit": "b4baccd823d2a73be276c1de745b19cf7c56a0d6",
+      "path": "examples/customer_service_agent_evidence_pack.json",
+      "sha256": "79de2641b98e2622dd67d3c8027c527678d1c3effdd1992aee85ac6565ec7f41"
+    }
+  },
+  "bundled": {
+    "manifest.json": "848ad8e852340c143ea8daf4300dab8a34d252cd730ff08e41c641482e12a1f0",
+    "run-record.json": "32e8b6ee358dca8f59ced337d71a931c8f91be4d495bf854ac38bf3ae132bc9d",
+    "replay-bundle.json": "928d2a47a29d50d3686bd49bae86076bb081fbfe6dd64abfb94b74e499bcd2bd",
+    "evidence-pack.json": "43224fd26c0d6f2affa9b44173929b3d57d325e82f74f05994fd3c231af74330"
+  },
+  "byte_equal_to_source": [
+    "manifest.json"
+  ]
+}

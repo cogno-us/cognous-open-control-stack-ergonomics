@@ -1,0 +1,227 @@
+{
+  "bundle_id": "bundle-cs-demo-001",
+  "bundle_version": "0.1",
+  "run_id": "run-cs-demo-001",
+  "status": "complete",
+  "generated_at": "2026-07-01T10:16:00Z",
+  "producer": "ocs-demo-synthetic",
+  "frame": {
+    "frame_id": "frame-cs-demo-001",
+    "task": "Look up a customer, search account notes, and attempt to send a follow-up email.",
+    "actor": "customer-service-agent",
+    "environment": "production",
+    "allowed_tools": [
+      "crm_read",
+      "notes_search"
+    ],
+    "blocked_tools": [
+      "email_send"
+    ],
+    "policy_version": "cs-policy-demo-1",
+    "created_at": "2026-07-01T10:15:00Z"
+  },
+  "action_proposals": [
+    {
+      "action_id": "action-cs-demo-001",
+      "run_id": "run-cs-demo-001",
+      "tool_name": "crm_read",
+      "action_type": "read",
+      "target": "customer:C-7823",
+      "payload": {
+        "fields": [
+          "name",
+          "email",
+          "account_status"
+        ]
+      },
+      "proposed_at": "2026-07-01T10:15:01Z",
+      "reason": "Retrieve customer details to prepare the summary."
+    },
+    {
+      "action_id": "action-cs-demo-002",
+      "run_id": "run-cs-demo-001",
+      "tool_name": "notes_search",
+      "action_type": "read",
+      "target": "notes:C-7823",
+      "payload": {
+        "query": "return request",
+        "limit": 5
+      },
+      "proposed_at": "2026-07-01T10:15:03Z",
+      "reason": "Search account notes for the open return request."
+    },
+    {
+      "action_id": "action-cs-demo-003",
+      "run_id": "run-cs-demo-001",
+      "tool_name": "email_send",
+      "action_type": "external_send",
+      "target": "customer-placeholder@example.com",
+      "payload": {
+        "subject": "Your return has been processed",
+        "body": "<draft>"
+      },
+      "proposed_at": "2026-07-01T10:15:08Z",
+      "reason": "Send the prepared email draft to the customer."
+    }
+  ],
+  "policy_decisions": [
+    {
+      "decision_id": "decision-cs-demo-001",
+      "action_id": "action-cs-demo-001",
+      "run_id": "run-cs-demo-001",
+      "result": "allow",
+      "policy_name": "read_allowed_tool_policy",
+      "reason": "Tool 'crm_read' is allowed and action type is 'read'.",
+      "decided_at": "2026-07-01T10:15:02Z",
+      "deterministic_fingerprint": "fp-demo-crm-read",
+      "trace_id": "trace-cs-demo-001"
+    },
+    {
+      "decision_id": "decision-cs-demo-002",
+      "action_id": "action-cs-demo-002",
+      "run_id": "run-cs-demo-001",
+      "result": "allow",
+      "policy_name": "read_allowed_tool_policy",
+      "reason": "Tool 'notes_search' is allowed and action type is 'read'.",
+      "decided_at": "2026-07-01T10:15:04Z",
+      "deterministic_fingerprint": "fp-demo-notes-search",
+      "trace_id": "trace-cs-demo-002"
+    },
+    {
+      "decision_id": "decision-cs-demo-003",
+      "action_id": "action-cs-demo-003",
+      "run_id": "run-cs-demo-001",
+      "result": "block",
+      "policy_name": "blocked_tool_policy",
+      "reason": "Tool 'email_send' is explicitly blocked in this frame: outbound-send authority is missing.",
+      "decided_at": "2026-07-01T10:15:09Z",
+      "deterministic_fingerprint": "fp-demo-email-send",
+      "trace_id": "trace-cs-demo-003"
+    }
+  ],
+  "policy_traces": [
+    {
+      "trace_id": "trace-cs-demo-001",
+      "run_id": "run-cs-demo-001",
+      "action_id": "action-cs-demo-001",
+      "evaluated_at": "2026-07-01T10:15:02Z",
+      "rules_evaluated": [
+        {
+          "rule_name": "require-actor-allowlist",
+          "matched": true,
+          "result": "allow",
+          "reason": "customer-service-agent is in the allowed actor list for crm_read."
+        },
+        {
+          "rule_name": "require-read-authority",
+          "matched": true,
+          "result": "allow",
+          "reason": "AuthorityRecord authority-cs-demo-001 grants read scope."
+        }
+      ],
+      "final_result": "allow",
+      "deterministic_fingerprint": "fp-demo-crm-read"
+    },
+    {
+      "trace_id": "trace-cs-demo-002",
+      "run_id": "run-cs-demo-001",
+      "action_id": "action-cs-demo-002",
+      "evaluated_at": "2026-07-01T10:15:04Z",
+      "rules_evaluated": [
+        {
+          "rule_name": "require-actor-allowlist",
+          "matched": true,
+          "result": "allow",
+          "reason": "customer-service-agent is in the allowed actor list for crm_read."
+        },
+        {
+          "rule_name": "require-read-authority",
+          "matched": true,
+          "result": "allow",
+          "reason": "AuthorityRecord authority-cs-demo-001 grants read scope."
+        }
+      ],
+      "final_result": "allow",
+      "deterministic_fingerprint": "fp-demo-notes-search"
+    },
+    {
+      "trace_id": "trace-cs-demo-003",
+      "run_id": "run-cs-demo-001",
+      "action_id": "action-cs-demo-003",
+      "evaluated_at": "2026-07-01T10:15:09Z",
+      "rules_evaluated": [
+        {
+          "rule_name": "require-external-send-authority",
+          "matched": false,
+          "result": "block",
+          "reason": "No authority record found granting outbound-send scope for this run."
+        }
+      ],
+      "final_result": "block",
+      "deterministic_fingerprint": "fp-demo-email-send"
+    }
+  ],
+  "blocked_actions": [
+    {
+      "blocked_id": "blocked-cs-demo-001",
+      "action_id": "action-cs-demo-003",
+      "run_id": "run-cs-demo-001",
+      "reason": "Tool 'email_send' is explicitly blocked in this frame: outbound-send authority is missing.",
+      "policy_name": "blocked_tool_policy",
+      "blocked_at": "2026-07-01T10:15:09Z"
+    }
+  ],
+  "authority_records": [
+    {
+      "authority_id": "authority-cs-demo-001",
+      "run_id": "run-cs-demo-001",
+      "actor": "customer-service-agent",
+      "scope": [
+        "read"
+      ],
+      "source": "user_consent",
+      "expires_at": null,
+      "created_at": "2026-07-01T10:15:00Z"
+    }
+  ],
+  "reliance_records": [
+    {
+      "reliance_id": "reliance-cs-demo-001",
+      "run_id": "run-cs-demo-001",
+      "source_name": "crm_read",
+      "source_type": "tool",
+      "scope": "customer record fields: name, email, account_status",
+      "referenced_action_id": "action-cs-demo-001",
+      "created_at": "2026-07-01T10:15:02Z"
+    },
+    {
+      "reliance_id": "reliance-cs-demo-002",
+      "run_id": "run-cs-demo-001",
+      "source_name": "notes_search",
+      "source_type": "tool",
+      "scope": "account notes for customer C-7823",
+      "referenced_action_id": "action-cs-demo-002",
+      "created_at": "2026-07-01T10:15:04Z"
+    }
+  ],
+  "final_output": "Draft prepared but email send blocked: outbound-send authority is missing.",
+  "validation_report": {
+    "valid": true,
+    "checked_object_type": "AgentReplayBundle",
+    "checked_id": "bundle-cs-demo-001",
+    "issues": [
+      {
+        "severity": "warning",
+        "code": "W012",
+        "message": "signature_metadata is missing.",
+        "path": "signature_metadata"
+      }
+    ]
+  },
+  "redaction_metadata": null,
+  "signature_metadata": null,
+  "metadata": {
+    "synthetic": true,
+    "note": "Synthetic demo fixture; no real customer data."
+  }
+}
