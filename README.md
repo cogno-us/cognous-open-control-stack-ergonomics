@@ -36,6 +36,7 @@ The `stack` extra uses direct git references, so it is for installing from this 
 - [`docs/demo.md`](docs/demo.md): the offline customer-service demo, its steps, exit codes and limits.
 - [`docs/validate.md`](docs/validate.md): `ocs validate`, the (kind, version) registry, exit mapping and what a pass does not prove.
 - [`docs/init-doctor.md`](docs/init-doctor.md): the workflow scaffold and the read-only setup diagnosis.
+- [`docs/development.md`](docs/development.md): `make check`, `make release-check`, the claim-boundary check and the opt-in pre-push hook.
 - [`docs/evidence-render.md`](docs/evidence-render.md): what `ocs evidence render` shows and what it does not prove.
 
 ## Phases
