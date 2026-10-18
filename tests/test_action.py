@@ -456,7 +456,7 @@ def test_expression_in_a_run_script_fails(repo_copy: Path) -> None:
     mutate(
         repo_copy,
         ".github/actions/ocs/action.yml",
-        'bin="${OCS_ACTION_BIN:-ocs}"',
+        'bin="${OCS_ACTION_BIN:-cognous-ocs}"',
         'bin="${{ inputs.manifest }}"',
     )
     assert any("${{" in e for e in check_action.check_action(repo_copy))
