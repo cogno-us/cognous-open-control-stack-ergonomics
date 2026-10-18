@@ -56,8 +56,7 @@ With `--format json`, one JSON object per run on standard output, nothing else.
   "exit_code": 2,
   "reason_codes": ["OCS_KIND_UNREGISTERED"],
   "subject": {"kind": "replay-bundle", "path": "bundle.json", "declared_version": "9.9.9"},
-  "verdict_source": {"component": "replay", "contract": "execution-attempt-lifecycle", "contract_version": "0.1.0-draft"},
-  "does_not_prove": ["external source linkage", "producer authenticity"],
+  "does_not_prove": [],
   "messages": ["replay-bundle version 9.9.9 is not a registered kind/version pair"]
 }
 ```
@@ -66,6 +65,7 @@ Rules:
 - `outcome` is one of `pass`, `review`, `not_evaluated`, `fail`, `invalid`, `error`. **Correction:** `error` is added because exit 4 (internal or execution error) had no outcome in the first draft. Exits: pass 0, review 0 (1 under `--strict`), not_evaluated 3, fail 1, invalid 2, error 4.
 - Consumers choose a parser by `envelope_version`, never by which keys happen to be present. A consumer that does not know the version must treat the result as `invalid`.
 - `verdict_source` is required whenever a component produced the verdict. `ocs` adds no verdict of its own. **Correction:** a command that chains several components (`demo`) names in `verdict_source` the component whose decision it evidences (the control plane, for the blocked send) and lists every step under `extensions["x-steps"]`. A command that only reads and formats (`evidence render`) produced no component verdict and carries no `verdict_source`; its `does_not_prove` says the pack was not validated by that command. `contract_version` is the installed component package version, not an ODES draft label.
+- **Correction (Phase 2):** a registry refusal (`OCS_KIND_UNREGISTERED`, `OCS_ARCHIVAL_ONLY`) is made by `ocs` before any component runs, so it carries no `verdict_source`; the first draft's example showed one. In `validate`, a component exit 0 is `pass`, exit 1 or 2 is `invalid` (exit 2: the artifact was not accepted; the component's output is in `extensions["x-component-output"]`), a crash or any other code is `error` (exit 4). The component's verdict is relayed, never remapped to a stronger one.
 - `does_not_prove` is required on every `pass`. Success text always states the boundary, for example `artifact-internal validation passed`.
 - `messages` are human text with control characters stripped. Nothing machine-readable lives in them.
 - Unknown members are refused by `ocs`'s own validators and preserved only under `extensions` with `x-` names, the same model as the ODES contracts.
@@ -114,6 +114,7 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 - Every (kind, version) pair is registered as full semantic validation or archival-only. An unregistered pair fails closed (exit 2).
 - `validate` calls component validators through their ODES contracts. It does not import component internals.
 - Each success states what it does not prove.
+- **Correction (Phase 2):** the registry lives in `src/ocs/registry.py` and is listed in `docs/validate.md`. A missing, non-string or ambiguous version member matches no pair. A file whose `artifact_kind` disagrees with `--kind` is refused. Duplicate JSON members, NaN/Infinity and non-UTF-8 are refused as `OCS_INPUT_INVALID`. Pins are checked only for the one component the pair needs.
 
 ## 8. Path and write confinement
 

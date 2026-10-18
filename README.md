@@ -34,6 +34,7 @@ The `stack` extra uses direct git references, so it is for installing from this 
 - [`src/ocs/`](src/ocs): the package. `ocs.lock` holds the component pins; `ocs/fixtures/customer-service/` holds the bundled example and its `provenance.json`.
 - [`docs/cli-contract.md`](docs/cli-contract.md): command set, exit codes, JSON result envelope, diagnostics file, reason-code naming. This is the Phase 0 deliverable.
 - [`docs/demo.md`](docs/demo.md): the offline customer-service demo, its steps, exit codes and limits.
+- [`docs/validate.md`](docs/validate.md): `ocs validate`, the (kind, version) registry, exit mapping and what a pass does not prove.
 - [`docs/evidence-render.md`](docs/evidence-render.md): what `ocs evidence render` shows and what it does not prove.
 
 ## Phases
