@@ -1,0 +1,547 @@
+{
+  "run_id": "run-cs-demo-001",
+  "input_time_floors": {
+    "sha256:4d58fe95f484d2838474ba9f2076d4dad27f8ae11b5bbb37c3940d4dc219aa25": "2026-10-05T19:00:00+00:00",
+    "sha256:7bf109794f3fdb3d24aad6f4cb88f8e5723da2344e531827957c7bf4da6d2341": "2026-10-05T19:00:00+00:00",
+    "sha256:57c91101b5b81bf2350a4a7ae74450715117ee58468fdc8fd36d703128ac268f": "2026-10-05T19:00:00+00:00",
+    "sha256:75b3dbca1161f704fd829b21efb6a1a64eccdbb3ac2a3470f4c90876030d161e": "2026-10-05T19:00:00+00:00",
+    "sha256:934b7e8def75984ae5def01106f685034e10868e6dd2b52ce8ef8353222eab0b": "2026-10-05T19:00:00+00:00",
+    "sha256:47e5536988da29fe21510ce31a6294a0f686b620f044a208525da0002c30ca33": "2026-10-05T19:00:00+00:00"
+  },
+  "resolution_checks": [
+    {
+      "check_id": "e5d6806f-b667-474e-8bfe-7ae468e948cb",
+      "stage": "decision",
+      "evaluated_at": "2026-10-05T19:00:00+00:00",
+      "time_source": "test_override",
+      "inputs": [
+        {
+          "input_type": "manifest",
+          "input_id": "customer-service-bounded-demo-v1",
+          "expected": {},
+          "observed": {},
+          "record_commitment": "sha256:9a36613d4c93a5230788b6e5fbf10a5b12b1b32b87e90fb9f467ce6f71df1360",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "authority_context",
+          "input_id": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+          "expected": {},
+          "observed": {
+            "schema_version": "0.1.0",
+            "interface_status": "proposed_pending_governor_review"
+          },
+          "record_commitment": "sha256:4c526fda8866bb2ef371b89a7c971d648924059a48c8937ee9b847411a43a8ba",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "role_mapping",
+          "input_id": "urn:ocs-demo:institution:synthetic-customer-service",
+          "expected": {},
+          "observed": {
+            "version": "roles-v1",
+            "digest": "sha256:5118422c4696adf62629fea8d06b0b567e390a75b79a618f789362683839e9be"
+          },
+          "record_commitment": "sha256:fc922b2bac16a7bb8a05b236c53a52c3fdee10ce49086f1df92c1ebea51cc429",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "identity",
+          "input_id": "urn:ocs-demo:identity:customer-service-agent",
+          "expected": {},
+          "observed": {
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:e3967c7571bf529f0000dd4394ec8e3959b59139a2a2c236c14e297660250a66",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "mandate",
+          "input_id": "urn:ocs-demo:issuance:1",
+          "expected": {},
+          "observed": {
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:5ed802ead6eebe5e36f07fe39194e0c8a1a484cf7f547607ae9e3e3dddc57227",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "grant",
+          "input_id": "urn:ocs-demo:grant:lookup-only-1",
+          "expected": {
+            "revision": "1",
+            "status": "active"
+          },
+          "observed": {
+            "revision": "1",
+            "status": "active",
+            "version": "status-v1",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:040c2a10daff52fb305a10295d80225180288be0b2db75795ccc6318482202d4",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "conflict",
+          "input_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+          "expected": {},
+          "observed": {
+            "state": "clear",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:474412253e1a58bcf636215510a5dc9922ce600d5c2851e0ab74099ddb135f85",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "policy",
+          "input_id": "urn:ocs-demo:policy:customer-service-policy",
+          "expected": {
+            "version": "1.0",
+            "status": "active"
+          },
+          "observed": {
+            "status": "active",
+            "version": "1.0",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:d9b898c894578938552fe140916a9de6f083f8204b17a9d1ef984dd92e99e5a2",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "evidence",
+          "input_id": "urn:ocs-demo:evidence:customer-case",
+          "expected": {
+            "state": "current"
+          },
+          "observed": {
+            "state": "current",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:e64b5a9bb52720367d55c62657dd5b6d0f448f28bf87bcba6d6f54f7f662e520",
+          "missing": false,
+          "previous_observed_at": null
+        }
+      ],
+      "reasons": []
+    },
+    {
+      "check_id": "b97a8176-8b89-47bf-8f8c-55c8e8a5c609",
+      "stage": "effect",
+      "evaluated_at": "2026-10-05T19:00:00+00:00",
+      "time_source": "test_override",
+      "inputs": [
+        {
+          "input_type": "manifest",
+          "input_id": "customer-service-bounded-demo-v1",
+          "expected": {},
+          "observed": {},
+          "record_commitment": "sha256:9a36613d4c93a5230788b6e5fbf10a5b12b1b32b87e90fb9f467ce6f71df1360",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "authority_context",
+          "input_id": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+          "expected": {},
+          "observed": {
+            "schema_version": "0.1.0",
+            "interface_status": "proposed_pending_governor_review"
+          },
+          "record_commitment": "sha256:4c526fda8866bb2ef371b89a7c971d648924059a48c8937ee9b847411a43a8ba",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "role_mapping",
+          "input_id": "urn:ocs-demo:institution:synthetic-customer-service",
+          "expected": {},
+          "observed": {
+            "version": "roles-v1",
+            "digest": "sha256:5118422c4696adf62629fea8d06b0b567e390a75b79a618f789362683839e9be"
+          },
+          "record_commitment": "sha256:fc922b2bac16a7bb8a05b236c53a52c3fdee10ce49086f1df92c1ebea51cc429",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "identity",
+          "input_id": "urn:ocs-demo:identity:customer-service-agent",
+          "expected": {},
+          "observed": {
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:e3967c7571bf529f0000dd4394ec8e3959b59139a2a2c236c14e297660250a66",
+          "missing": false,
+          "previous_observed_at": "2026-10-05T19:00:00+00:00"
+        },
+        {
+          "input_type": "mandate",
+          "input_id": "urn:ocs-demo:issuance:1",
+          "expected": {},
+          "observed": {
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:5ed802ead6eebe5e36f07fe39194e0c8a1a484cf7f547607ae9e3e3dddc57227",
+          "missing": false,
+          "previous_observed_at": "2026-10-05T19:00:00+00:00"
+        },
+        {
+          "input_type": "grant",
+          "input_id": "urn:ocs-demo:grant:lookup-only-1",
+          "expected": {
+            "revision": "1",
+            "status": "active"
+          },
+          "observed": {
+            "revision": "1",
+            "status": "active",
+            "version": "status-v1",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:040c2a10daff52fb305a10295d80225180288be0b2db75795ccc6318482202d4",
+          "missing": false,
+          "previous_observed_at": "2026-10-05T19:00:00+00:00"
+        },
+        {
+          "input_type": "conflict",
+          "input_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+          "expected": {},
+          "observed": {
+            "state": "clear",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:474412253e1a58bcf636215510a5dc9922ce600d5c2851e0ab74099ddb135f85",
+          "missing": false,
+          "previous_observed_at": "2026-10-05T19:00:00+00:00"
+        },
+        {
+          "input_type": "policy",
+          "input_id": "urn:ocs-demo:policy:customer-service-policy",
+          "expected": {
+            "version": "1.0",
+            "status": "active"
+          },
+          "observed": {
+            "status": "active",
+            "version": "1.0",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:d9b898c894578938552fe140916a9de6f083f8204b17a9d1ef984dd92e99e5a2",
+          "missing": false,
+          "previous_observed_at": "2026-10-05T19:00:00+00:00"
+        },
+        {
+          "input_type": "evidence",
+          "input_id": "urn:ocs-demo:evidence:customer-case",
+          "expected": {
+            "state": "current"
+          },
+          "observed": {
+            "state": "current",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:e64b5a9bb52720367d55c62657dd5b6d0f448f28bf87bcba6d6f54f7f662e520",
+          "missing": false,
+          "previous_observed_at": "2026-10-05T19:00:00+00:00"
+        }
+      ],
+      "reasons": []
+    }
+  ],
+  "closeouts": [],
+  "decisions": [
+    {
+      "decision_id": "1d96fe7f-2be7-4d41-8ed0-6c43a6d069c4",
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "result": "authorized",
+      "reasons": [],
+      "decided_at": "2026-10-05T19:00:00+00:00",
+      "time_source": "test_override",
+      "operation_horizon": {
+        "source": "runtime_proposal",
+        "proposal_commitment": "sha256:e4963da59bb9aba8e0ab4c4fe0c72d977358a39a1976392d39a1cc34a6ac4a31",
+        "not_before": null,
+        "expires_at": null
+      },
+      "binding": {
+        "proposal_commitment": "sha256:e4963da59bb9aba8e0ab4c4fe0c72d977358a39a1976392d39a1cc34a6ac4a31",
+        "manifest_id": "customer-service-bounded-demo-v1",
+        "manifest_version": "1.1",
+        "manifest_digest": "sha256:9a36613d4c93a5230788b6e5fbf10a5b12b1b32b87e90fb9f467ce6f71df1360",
+        "actor": "urn:ocs-demo:identity:customer-service-agent",
+        "principal": "urn:ocs-demo:principal:customer-service",
+        "action_id": "urn:ocs-demo:action:crm-read",
+        "adapter_id": "urn:ocs-demo:adapter:crm",
+        "target": "customer:C-7823",
+        "payload_commitment": "sha256:fbf26d22c837a6af7c1a21ffaef9f8618c246047a80e286e82382c1845a5b66f",
+        "requested_permissions": [
+          "crm.read"
+        ],
+        "amount": 0.0,
+        "unit": "count",
+        "effects": 1,
+        "authority_context_id": "urn:ocs-demo:authority-context:customer-service-1",
+        "authority_context_version": "0.1.0",
+        "authority_context_status": "proposed_pending_governor_review",
+        "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+        "requirement_commitment": "sha256:3a0cc39eae512acbfd09ec071010e023eb63f262d6ccb12e100924fc890e73bf",
+        "grant_id": "urn:ocs-demo:grant:lookup-only-1",
+        "grant_revision": "1",
+        "policy_versions": [
+          {
+            "ref": "urn:ocs-demo:policy:customer-service-policy",
+            "version": "1.0"
+          }
+        ],
+        "role_mapping_version": "roles-v1",
+        "role_mapping_digest": "sha256:5118422c4696adf62629fea8d06b0b567e390a75b79a618f789362683839e9be",
+        "effective_max_effects": 1
+      },
+      "resolution_inputs": [
+        {
+          "input_type": "manifest",
+          "input_id": "customer-service-bounded-demo-v1",
+          "expected": {},
+          "observed": {},
+          "record_commitment": "sha256:9a36613d4c93a5230788b6e5fbf10a5b12b1b32b87e90fb9f467ce6f71df1360",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "authority_context",
+          "input_id": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+          "expected": {},
+          "observed": {
+            "schema_version": "0.1.0",
+            "interface_status": "proposed_pending_governor_review"
+          },
+          "record_commitment": "sha256:4c526fda8866bb2ef371b89a7c971d648924059a48c8937ee9b847411a43a8ba",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "role_mapping",
+          "input_id": "urn:ocs-demo:institution:synthetic-customer-service",
+          "expected": {},
+          "observed": {
+            "version": "roles-v1",
+            "digest": "sha256:5118422c4696adf62629fea8d06b0b567e390a75b79a618f789362683839e9be"
+          },
+          "record_commitment": "sha256:fc922b2bac16a7bb8a05b236c53a52c3fdee10ce49086f1df92c1ebea51cc429",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "identity",
+          "input_id": "urn:ocs-demo:identity:customer-service-agent",
+          "expected": {},
+          "observed": {
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:e3967c7571bf529f0000dd4394ec8e3959b59139a2a2c236c14e297660250a66",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "mandate",
+          "input_id": "urn:ocs-demo:issuance:1",
+          "expected": {},
+          "observed": {
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:5ed802ead6eebe5e36f07fe39194e0c8a1a484cf7f547607ae9e3e3dddc57227",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "grant",
+          "input_id": "urn:ocs-demo:grant:lookup-only-1",
+          "expected": {
+            "revision": "1",
+            "status": "active"
+          },
+          "observed": {
+            "revision": "1",
+            "status": "active",
+            "version": "status-v1",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:040c2a10daff52fb305a10295d80225180288be0b2db75795ccc6318482202d4",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "conflict",
+          "input_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+          "expected": {},
+          "observed": {
+            "state": "clear",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:474412253e1a58bcf636215510a5dc9922ce600d5c2851e0ab74099ddb135f85",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "policy",
+          "input_id": "urn:ocs-demo:policy:customer-service-policy",
+          "expected": {
+            "version": "1.0",
+            "status": "active"
+          },
+          "observed": {
+            "status": "active",
+            "version": "1.0",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:d9b898c894578938552fe140916a9de6f083f8204b17a9d1ef984dd92e99e5a2",
+          "missing": false,
+          "previous_observed_at": null
+        },
+        {
+          "input_type": "evidence",
+          "input_id": "urn:ocs-demo:evidence:customer-case",
+          "expected": {
+            "state": "current"
+          },
+          "observed": {
+            "state": "current",
+            "observed_at": "2026-10-05T19:00:00+00:00"
+          },
+          "record_commitment": "sha256:e64b5a9bb52720367d55c62657dd5b6d0f448f28bf87bcba6d6f54f7f662e520",
+          "missing": false,
+          "previous_observed_at": null
+        }
+      ]
+    }
+  ],
+  "refusals": [],
+  "attempts": [
+    {
+      "attempt_id": "f05442e4-3b38-4cff-9a29-94a633a4714e",
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "decision_id": "1d96fe7f-2be7-4d41-8ed0-6c43a6d069c4",
+      "started_at": "2026-10-05T19:00:00+00:00",
+      "time_source": "test_override",
+      "status": "attempted",
+      "acknowledgement": {},
+      "error": null
+    },
+    {
+      "attempt_id": "f05442e4-3b38-4cff-9a29-94a633a4714e",
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "decision_id": "1d96fe7f-2be7-4d41-8ed0-6c43a6d069c4",
+      "started_at": "2026-10-05T19:00:00+00:00",
+      "time_source": "test_override",
+      "status": "acknowledged",
+      "acknowledgement": {
+        "duplicate": false,
+        "effect": {
+          "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+          "grant_id": "urn:ocs-demo:grant:lookup-only-1",
+          "target": "customer:C-7823",
+          "amount": 0.0,
+          "unit": "count",
+          "payload": {
+            "customer_id": "C-7823",
+            "fields": [
+              "name",
+              "email",
+              "account_status"
+            ]
+          },
+          "state": "applied"
+        }
+      },
+      "error": null
+    }
+  ],
+  "observations": [
+    {
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "observed_at": "2026-10-05T19:00:00+00:00",
+      "state": "absent",
+      "destination_state": {}
+    },
+    {
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "observed_at": "2026-10-05T19:00:00+00:00",
+      "state": "applied",
+      "destination_state": {
+        "amount": 0.0,
+        "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+        "grant_id": "urn:ocs-demo:grant:lookup-only-1",
+        "payload": {
+          "customer_id": "C-7823",
+          "fields": [
+            "name",
+            "email",
+            "account_status"
+          ]
+        },
+        "state": "applied",
+        "target": "customer:C-7823",
+        "unit": "count"
+      }
+    }
+  ],
+  "reconciliations": [
+    {
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "reconciled_at": "2026-10-18T01:00:01.576946+00:00",
+      "result": "observed_absent",
+      "observation": {
+        "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+        "observed_at": "2026-10-05T19:00:00+00:00",
+        "state": "absent",
+        "destination_state": {}
+      },
+      "observation_accepted": true,
+      "retry_eligible": false,
+      "reasons": [],
+      "evaluation_time": "2026-10-05T19:00:00+00:00",
+      "observation_max_age_seconds": 300,
+      "observation_clock_tolerance_seconds": 5
+    },
+    {
+      "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+      "reconciled_at": "2026-10-18T01:00:01.589500+00:00",
+      "result": "applied",
+      "observation": {
+        "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+        "observed_at": "2026-10-05T19:00:00+00:00",
+        "state": "applied",
+        "destination_state": {
+          "amount": 0.0,
+          "effect_id": "sha256:98434affde8d2ed57b70832d83e45a179e6a6cb929d0dd8af3865e63ad580179",
+          "grant_id": "urn:ocs-demo:grant:lookup-only-1",
+          "payload": {
+            "customer_id": "C-7823",
+            "fields": [
+              "name",
+              "email",
+              "account_status"
+            ]
+          },
+          "state": "applied",
+          "target": "customer:C-7823",
+          "unit": "count"
+        }
+      },
+      "observation_accepted": true,
+      "retry_eligible": false,
+      "reasons": [],
+      "evaluation_time": "2026-10-05T19:00:00+00:00",
+      "observation_max_age_seconds": 300,
+      "observation_clock_tolerance_seconds": 5
+    }
+  ]
+}

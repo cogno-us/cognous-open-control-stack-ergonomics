@@ -41,6 +41,7 @@ The `stack` extra uses direct git references, so it is for installing from this 
 - [`docs/schemas.md`](docs/schemas.md): `ocs schema export` and the schema snapshots for the result envelope and diagnostics file.
 - [`docs/action.md`](docs/action.md): the composite GitHub Action, `ocs ci`, and what the action guarantees.
 - [`docs/evidence-render.md`](docs/evidence-render.md): what `ocs evidence render` shows and what it does not prove.
+- [`docs/dashboard.md`](docs/dashboard.md): `ocs dashboard`, a read-only static HTML reading of verification reports, mutation reports, packs and run records.
 
 ## Phases
 
