@@ -280,6 +280,107 @@ def test_copy_inputs_is_opt_in(work: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert copied == ["01-manifest.json", "03-manifest.json", "04-run-record.json"]
 
 
+# output links: a link at an owned name is never written through, and never survives into the output
+
+
+def plant_link(work: Path) -> Path:
+    keep = work / "keep.txt"
+    keep.write_text("KEEP\n")
+    (work / "o").mkdir()
+    os.symlink(keep, work / "o" / "ci-diagnostics.json")
+    return keep
+
+
+@pytest.mark.parametrize(
+    ("argv", "outcomes", "expected"),
+    [
+        ([], {}, 2),
+        (["--workflow", "wf", "--non-assurance", "--strict"], {"manifest": "review"}, 1),
+    ],
+    ids=["refusal", "strict-review-failure"],
+)
+def test_diagnostics_replace_a_link_instead_of_writing_through_it(
+    work: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    outcomes: dict[str, str],
+    expected: int,
+) -> None:
+    Fake(monkeypatch, outcomes)
+    keep = plant_link(work)
+    extra = ["--manifest", "manifest.json"] if expected == 1 else []
+    code, _ = run(["--out", "o", *extra, *argv])
+    assert code == expected
+    leaf = work / "o" / "ci-diagnostics.json"
+    assert keep.read_text() == "KEEP\n"
+    assert not leaf.is_symlink()
+    assert json.loads(leaf.read_text())["exit_code"] == expected
+    assert sorted(p.name for p in (work / "o").iterdir() if p.name.startswith(".")) == []
+
+
+def test_a_link_at_the_diagnostics_name_is_removed_on_success(
+    work: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    Fake(monkeypatch, {})
+    keep = plant_link(work)
+    assert run(["--out", "o", "--workflow", "wf", "--non-assurance"])[0] == 0
+    assert keep.read_text() == "KEEP\n"
+    assert not (work / "o" / "ci-diagnostics.json").exists()
+    assert not (work / "o" / "ci-diagnostics.json").is_symlink()
+
+
+def test_diagnostics_are_not_written_into_a_linked_directory(tmp_path: Path) -> None:
+    from cognous_ocs.envelope import write_diagnostics
+
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    os.symlink(real, link)
+    result = Result("ci", "invalid", ["OCS_PATHS"], {"kind": "ci"})
+    with pytest.raises(OSError):
+        write_diagnostics(result, link)
+    assert list(real.iterdir()) == []
+
+
+def test_diagnostics_file_is_a_regular_file_with_a_fixed_mode(tmp_path: Path) -> None:
+    from cognous_ocs.envelope import write_diagnostics
+
+    result = Result("ci", "invalid", ["OCS_PATHS"], {"kind": "ci"})
+    target = write_diagnostics(result, tmp_path / "d")
+    assert target.is_file() and not target.is_symlink()
+    assert (target.stat().st_mode & 0o777) == 0o644
+    write_diagnostics(result, tmp_path / "d")  # a second write replaces the first
+    assert [p.name for p in (tmp_path / "d").iterdir()] == ["ci-diagnostics.json"]
+
+
+def test_copy_inputs_refuses_a_linked_input_and_copies_nothing(
+    work: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    Fake(monkeypatch, {})
+    outside = work.parent / "outside.json"
+    outside.write_bytes((work / "manifest.json").read_bytes())
+    os.symlink(outside, work / "linked.json")
+    base = ["--out", "o", "--manifest", "linked.json", "--non-assurance"]
+    code, body = run([*base, "--copy-inputs"])
+    assert (code, body["reason_codes"]) == (2, ["OCS_PATHS"])
+    assert not (work / "o" / "inputs").exists()
+    assert run(base)[0] == 0  # without the option a linked input is validated as before
+    assert not (work / "o" / "inputs").exists()
+
+
+def test_copy_inputs_does_not_write_through_a_link_at_the_destination(work: Path) -> None:
+    keep = work / "keep.txt"
+    keep.write_text("KEEP\n")
+    dest_dir = work / "d"
+    dest_dir.mkdir()
+    os.symlink(keep, dest_dir / "01-manifest.json")
+    with pytest.raises(OSError):
+        ci.copy_regular(work / "manifest.json", dest_dir / "01-manifest.json")
+    assert keep.read_text() == "KEEP\n"
+    ci.copy_regular(work / "manifest.json", dest_dir / "02-manifest.json")
+    assert (dest_dir / "02-manifest.json").read_bytes() == (work / "manifest.json").read_bytes()
+
+
 def test_summary_markdown_neutralises_markup(work: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     Fake(monkeypatch, {})
     weird = work / "a|b`c<d>[e](f)#g.json"

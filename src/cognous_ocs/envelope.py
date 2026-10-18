@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
+import os
+import secrets
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -137,8 +140,29 @@ class Result:
 
 
 def write_diagnostics(result: Result, directory: Path) -> Path:
-    """Write ci-diagnostics.json into an already-confined directory."""
+    """Write ci-diagnostics.json into an already-confined directory.
+
+    The directory is opened without following a final link, the content goes to a new
+    exclusive file inside it, and an atomic rename puts it at the diagnostics name. A link
+    already sitting at that name is replaced as a link; its target is never opened.
+    """
     directory.mkdir(parents=True, exist_ok=True)
-    target = directory / DIAGNOSTICS_NAME
-    target.write_text(json.dumps(result.diagnostics(), indent=2) + "\n", encoding="utf-8")
-    return target
+    body = (json.dumps(result.diagnostics(), indent=2) + "\n").encode("utf-8")
+    dir_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        temp = f".{DIAGNOSTICS_NAME}.{os.getpid()}.{secrets.token_hex(8)}.tmp"
+        fd = os.open(
+            temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644, dir_fd=dir_fd
+        )
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                os.fchmod(handle.fileno(), 0o644)
+                handle.write(body)
+            os.replace(temp, DIAGNOSTICS_NAME, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(temp, dir_fd=dir_fd)
+            raise
+    finally:
+        os.close(dir_fd)
+    return directory / DIAGNOSTICS_NAME

@@ -17,9 +17,11 @@ The path rules mirror `cognous_ocs.paths`; tests/test_action.py runs both on the
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
+import secrets
 import sys
 from pathlib import Path
 
@@ -166,6 +168,7 @@ def plan(env: dict[str, str], workspace: Path, runner_temp: Path | None) -> dict
 
 
 def write_diagnostics(out: Path, code: str) -> None:
+    """Same write as cognous_ocs.envelope.write_diagnostics: no final link followed, atomic replace."""
     out.mkdir(parents=True, exist_ok=True)
     body = {
         "envelope_version": "1",
@@ -174,7 +177,25 @@ def write_diagnostics(out: Path, code: str) -> None:
         "reason_codes": [code],
         "report_paths": [],
     }
-    (out / "ci-diagnostics.json").write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8")
+    data = (json.dumps(body, indent=2) + "\n").encode("utf-8")
+    name = "ci-diagnostics.json"
+    dir_fd = os.open(out, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        temp = f".{name}.{os.getpid()}.{secrets.token_hex(8)}.tmp"
+        fd = os.open(
+            temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644, dir_fd=dir_fd
+        )
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                os.fchmod(handle.fileno(), 0o644)
+                handle.write(data)
+            os.replace(temp, name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(temp, dir_fd=dir_fd)
+            raise
+    finally:
+        os.close(dir_fd)
 
 
 def emit(values: dict[str, str], output_file: str | None) -> None:

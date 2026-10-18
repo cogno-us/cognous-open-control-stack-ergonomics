@@ -18,8 +18,10 @@ existing directory must hold only files this command owns; each run replaces the
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
+import stat
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -95,12 +97,31 @@ def _owned_only(out: Path) -> bool:
 
 
 def _clear_owned(out: Path) -> None:
+    diagnostics = out / DIAGNOSTICS
+    if diagnostics.is_symlink():  # a link at the diagnostics name is dropped, never followed
+        diagnostics.unlink()
     for name in OWNED - {DIAGNOSTICS}:
         target = out / name
         if target.is_dir() and not target.is_symlink():
             shutil.rmtree(target)
         elif target.exists() or target.is_symlink():
             target.unlink()
+
+
+def copy_regular(source: Path, target: Path, *, follow_source: bool = True) -> None:
+    """Copy a file to a new exclusive destination; a link at the destination is never followed.
+
+    With follow_source false the source must be a regular file and not a link either."""
+    flags = os.O_RDONLY | (0 if follow_source else os.O_NOFOLLOW)
+    src_fd = os.open(source, flags)
+    try:
+        if not stat.S_ISREG(os.fstat(src_fd).st_mode):
+            raise OSError("the source is not a regular file")
+        dst_fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644)
+        with os.fdopen(src_fd, "rb", closefd=False) as src, os.fdopen(dst_fd, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+    finally:
+        os.close(src_fd)
 
 
 def _within(path: Path, directory: Path) -> bool:
@@ -268,6 +289,12 @@ def run_ci(
                 raise PathRefused("an input lives inside the output directory")
         if workflow is not None and _within(out, Path(workflow)):
             raise PathRefused("the output directory is inside the workflow directory")
+        if copy_inputs and any(
+            s.path is not None and s.path.is_symlink()
+            for s in steps
+            if s.kind in ("manifest", "run-record")
+        ):
+            raise PathRefused("an input to be copied is a symbolic link")
     except PathRefused as exc:
         return Outcome(Result("ci", INVALID, [OCS_PATHS], subject, messages=[str(exc)]), out)
 
@@ -303,14 +330,14 @@ def run_ci(
     pack_step = next((s for s in steps if s.kind == "evidence-pack"), None)
     if pack_step is not None and pack_step.outcome == PASS and pack_step.path is not None:
         (out / EVIDENCE_DIR).mkdir()
-        shutil.copyfile(pack_step.path, out / EVIDENCE_DIR / "evidence-pack.json")
+        copy_regular(pack_step.path, out / EVIDENCE_DIR / "evidence-pack.json")
         report_paths.append(f"{EVIDENCE_DIR}/evidence-pack.json")
     if copy_inputs:
         (out / INPUTS_DIR).mkdir()
         for n, s in enumerate(steps, start=1):
             if s.kind in ("manifest", "run-record") and s.path is not None:
                 target = f"{INPUTS_DIR}/{n:02d}-{s.kind}.json"
-                shutil.copyfile(s.path, out / target)
+                copy_regular(s.path, out / target, follow_source=False)
                 report_paths.append(target)
     messages = [f"{s.label}: {s.outcome}" for s in steps]
     if outcome == REVIEW and not assurance:
