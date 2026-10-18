@@ -1,0 +1,36 @@
+{
+  "manifest_id": "customer-service-bounded-demo-v1",
+  "manifest_version": "1.1",
+  "manifest_digest": "sha256:9a36613d4c93a5230788b6e5fbf10a5b12b1b32b87e90fb9f467ce6f71df1360",
+  "actor": "urn:ocs-demo:identity:customer-service-agent",
+  "principal": "urn:ocs-demo:principal:customer-service",
+  "action_id": "urn:ocs-demo:action:crm-read",
+  "adapter_id": "urn:ocs-demo:adapter:crm",
+  "target": "customer:C-7823",
+  "payload": {
+    "customer_id": "C-7823",
+    "fields": [
+      "name",
+      "email",
+      "account_status"
+    ]
+  },
+  "payload_commitment": "sha256:fbf26d22c837a6af7c1a21ffaef9f8618c246047a80e286e82382c1845a5b66f",
+  "requested_permissions": [
+    "crm.read"
+  ],
+  "amount": 0.0,
+  "unit": "count",
+  "effects": 1,
+  "authority_context_ref": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+  "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+  "risk_metadata": {},
+  "not_before": null,
+  "expires_at": null,
+  "correlation_id": "case-cs-demo-001",
+  "run_id": "run-cs-demo-001",
+  "expected_side_effects": [],
+  "evidence_refs": [
+    "urn:ocs-demo:evidence:customer-case"
+  ]
+}

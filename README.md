@@ -21,10 +21,10 @@ Repository: `cognous-open-control-stack-ergonomics`. Command: `ocs` (subject to 
 
 ```
 python -m venv .venv && . .venv/bin/activate
-pip install ".[stack]"     # the four components, pinned to the hub's component-lock commits
+pip install ".[stack]"     # the four components; the control plane is pinned ahead of the hub lock (docs/demo.md)
 ocs --version
 ocs demo customer-service --out demo-out   # offline; exit 0 only if the blocked email send is evidenced
-ocs evidence render demo-out/inputs/evidence-pack.json --out view.html
+ocs evidence render demo-out/outputs/evidence-pack.json --out view.html
 ```
 
 The `stack` extra uses direct git references, so it is for installing from this repository, not for an index upload.

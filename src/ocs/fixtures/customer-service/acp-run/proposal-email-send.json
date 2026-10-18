@@ -1,0 +1,32 @@
+{
+  "manifest_id": "customer-service-bounded-demo-v1",
+  "manifest_version": "1.1",
+  "manifest_digest": "sha256:9a36613d4c93a5230788b6e5fbf10a5b12b1b32b87e90fb9f467ce6f71df1360",
+  "actor": "urn:ocs-demo:identity:customer-service-agent",
+  "principal": "urn:ocs-demo:principal:customer-service",
+  "action_id": "urn:ocs-demo:action:email-send",
+  "adapter_id": "urn:ocs-demo:adapter:email",
+  "target": "customer-placeholder@example.com",
+  "payload": {
+    "subject": "Your return has been processed",
+    "body": "<draft>"
+  },
+  "payload_commitment": "sha256:4cfd0e3c2ce05689d93050c2464541a9b450d6a979a62f4f12f4d75d42ea99dd",
+  "requested_permissions": [
+    "outbound.send"
+  ],
+  "amount": 0.0,
+  "unit": "count",
+  "effects": 1,
+  "authority_context_ref": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+  "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+  "risk_metadata": {},
+  "not_before": null,
+  "expires_at": null,
+  "correlation_id": "case-cs-demo-001",
+  "run_id": "run-cs-demo-001",
+  "expected_side_effects": [],
+  "evidence_refs": [
+    "urn:ocs-demo:evidence:customer-case"
+  ]
+}

@@ -1,8 +1,10 @@
 """The component pins `ocs` was built against.
 
 These mirror the entries in the hub's component-lock.json at the hub commit recorded in
-fixtures/customer-service/provenance.json. `ocs` calls each component only through its
-public command; it never imports component internals.
+fixtures/customer-service/provenance.json, except the control plane: it is pinned to the first
+revision with `acp run` (83b49b5e), which is ahead of the hub lock (docs/demo.md and
+provenance.json record both). `ocs` calls each component only through its public command; it
+never imports component internals.
 """
 
 from __future__ import annotations
@@ -37,7 +39,7 @@ COMPONENTS: dict[str, Component] = {
             "control",
             "control_plane",
             "cogno-us/cognous-control-plane",
-            "d3dadee70bd319812b207389ab1e0f6efe511916",
+            "83b49b5e61cdacee916b502cdea775aefc72a064",
             "agent-control-plane",
             "acp",
             "run-record",

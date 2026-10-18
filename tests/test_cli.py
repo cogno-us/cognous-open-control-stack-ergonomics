@@ -14,7 +14,7 @@ def test_version_prints_cli_contract_and_example(capsys: pytest.CaptureFixture[s
     out = capsys.readouterr().out
     assert f"ocs {__version__}" in out
     assert f"cli-contract {CONTRACT_VERSION}" in out
-    assert "bundled-example customer-service 0.1.0" in out
+    assert "bundled-example customer-service 0.2.0" in out
     for command in ("aam", "acp", "arb", "agep"):
         assert f"bundled-component {command} " in out
 

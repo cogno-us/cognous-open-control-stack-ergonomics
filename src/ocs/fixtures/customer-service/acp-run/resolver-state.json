@@ -1,0 +1,86 @@
+{
+  "statuses": {
+    "urn:ocs-demo:grant:lookup-only-1": {
+      "grant_id": "urn:ocs-demo:grant:lookup-only-1",
+      "revision": "1",
+      "status": "active",
+      "version": "status-v1",
+      "status_ref": "urn:ocs-demo:status:grant-1",
+      "authority_basis_ref": "urn:ocs-demo:authority-basis:synthetic",
+      "tenant_id": null,
+      "superseded_by": null,
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "authority_domain": "customer-service",
+      "observed_at": "2026-10-05T19:00:00+00:00"
+    }
+  },
+  "identities": {
+    "urn:ocs-demo:identity:customer-service-agent": {
+      "identity": "urn:ocs-demo:identity:customer-service-agent",
+      "principal": "urn:ocs-demo:principal:customer-service",
+      "authenticated": true,
+      "delegation_valid": true,
+      "chain": [],
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "authority_domain": "customer-service",
+      "observed_at": "2026-10-05T19:00:00+00:00"
+    }
+  },
+  "mandates": {
+    "urn:ocs-demo:principal:synthetic-governor|urn:ocs-demo:role:synthetic-governor": {
+      "issuer": "urn:ocs-demo:principal:synthetic-governor",
+      "issuer_role": "urn:ocs-demo:role:synthetic-governor",
+      "issuance_record_ref": "urn:ocs-demo:issuance:1",
+      "mandate_valid": true,
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "authority_domain": "customer-service",
+      "observed_at": "2026-10-05T19:00:00+00:00"
+    }
+  },
+  "approvals": {},
+  "policies": {
+    "urn:ocs-demo:policy:customer-service-policy": {
+      "ref": "urn:ocs-demo:policy:customer-service-policy",
+      "version": "1.0",
+      "status": "active",
+      "tenant_id": null,
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "authority_domain": "customer-service",
+      "observed_at": "2026-10-05T19:00:00+00:00"
+    }
+  },
+  "conflicts": {
+    "urn:ocs-demo:authority-requirement:customer-service-v1": {
+      "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+      "state": "clear",
+      "conflict_refs": [
+        "urn:ocs-demo:policy:customer-service-policy"
+      ],
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "authority_domain": "customer-service",
+      "observed_at": "2026-10-05T19:00:00+00:00"
+    }
+  },
+  "evidence": {
+    "urn:ocs-demo:evidence:customer-case": {
+      "obligation_id": "urn:ocs-demo:evidence:customer-case",
+      "state": "current",
+      "source_ref": "urn:ocs-demo:source:customer-case",
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "authority_domain": "customer-service",
+      "observed_at": "2026-10-05T19:00:00+00:00"
+    }
+  },
+  "role_mappings": {
+    "urn:ocs-demo:institution:synthetic-customer-service": {
+      "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+      "version": "roles-v1",
+      "digest": "sha256:5118422c4696adf62629fea8d06b0b567e390a75b79a618f789362683839e9be",
+      "aliases": {
+        "customer-service-supervisor": [
+          "urn:ocs-demo:role:customer-service-supervisor"
+        ]
+      }
+    }
+  }
+}

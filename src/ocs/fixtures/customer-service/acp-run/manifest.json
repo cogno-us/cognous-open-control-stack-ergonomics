@@ -1,0 +1,263 @@
+{
+  "manifest_version": "1.1",
+  "manifest_id": "customer-service-bounded-demo-v1",
+  "agent_name": "Customer Service Agent (synthetic bounded demo)",
+  "agent_description": "Synthetic bounded form of the customer-service scenario; not deployed.",
+  "owner": "ocs-demo",
+  "environment": "synthetic",
+  "default_action": "escalate",
+  "tools": [
+    {
+      "tool_name": "crm_tool",
+      "adapter_id": "urn:ocs-demo:adapter:crm",
+      "description": "Synthetic adapter for crm_read; not a live system.",
+      "allowed": true,
+      "external_system": null,
+      "data_classification": "synthetic"
+    },
+    {
+      "tool_name": "notes_tool",
+      "adapter_id": "urn:ocs-demo:adapter:notes",
+      "description": "Synthetic adapter for notes_search; not a live system.",
+      "allowed": true,
+      "external_system": null,
+      "data_classification": "synthetic"
+    },
+    {
+      "tool_name": "email_tool",
+      "adapter_id": "urn:ocs-demo:adapter:email",
+      "description": "Synthetic adapter for email_send; not a live system.",
+      "allowed": true,
+      "external_system": "synthetic-email-gateway",
+      "data_classification": "synthetic"
+    }
+  ],
+  "actions": [
+    {
+      "action_name": "crm_read",
+      "action_id": "urn:ocs-demo:action:crm-read",
+      "tool_name": "crm_tool",
+      "action_type": "read",
+      "description": "Retrieve customer details to prepare the summary.",
+      "default_action": null,
+      "authority_required": [
+        {
+          "scope": "crm.read",
+          "description": "Declaration only; a downstream resolver must establish a current grant.",
+          "required": true,
+          "source": "ocs-demo"
+        }
+      ],
+      "review_requirement": {
+        "mode": "none"
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": [
+          "database",
+          "tool"
+        ],
+        "description": "Record the source the operation relied on."
+      },
+      "payload_policy": {
+        "required_fields": [
+          "customer_id"
+        ],
+        "optional_fields": [
+          "fields"
+        ],
+        "sensitive_fields": [
+          "customer_id"
+        ],
+        "forbidden_fields": []
+      },
+      "target_policy": {
+        "allowed_targets": [
+          "customer:C-7823"
+        ],
+        "allow_any_target": false
+      },
+      "effect_limits": {
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      },
+      "authority_context": {
+        "schema_version": "0.1.0",
+        "profile_ref": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+        "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+        "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+        "authority_domain": "customer-service",
+        "consequence_tier": "T1",
+        "evidence_obligation_ids": [
+          "urn:ocs-demo:evidence:customer-case"
+        ]
+      },
+      "redaction_hints": [
+        {
+          "field_path": "customer_id",
+          "reason": "Synthetic content is sensitive in exported evidence.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": [
+        "synthetic",
+        "customer-service",
+        "read"
+      ],
+      "metadata": {}
+    },
+    {
+      "action_name": "notes_search",
+      "action_id": "urn:ocs-demo:action:notes-search",
+      "tool_name": "notes_tool",
+      "action_type": "read",
+      "description": "Search account notes for the open return request.",
+      "default_action": null,
+      "authority_required": [
+        {
+          "scope": "notes.search",
+          "description": "Declaration only; a downstream resolver must establish a current grant.",
+          "required": true,
+          "source": "ocs-demo"
+        }
+      ],
+      "review_requirement": {
+        "mode": "none"
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": [
+          "database",
+          "tool"
+        ],
+        "description": "Record the source the operation relied on."
+      },
+      "payload_policy": {
+        "required_fields": [
+          "customer_id"
+        ],
+        "optional_fields": [
+          "query",
+          "limit"
+        ],
+        "sensitive_fields": [
+          "customer_id"
+        ],
+        "forbidden_fields": []
+      },
+      "target_policy": {
+        "allowed_targets": [
+          "notes:C-7823"
+        ],
+        "allow_any_target": false
+      },
+      "effect_limits": {
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      },
+      "authority_context": {
+        "schema_version": "0.1.0",
+        "profile_ref": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+        "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+        "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+        "authority_domain": "customer-service",
+        "consequence_tier": "T1",
+        "evidence_obligation_ids": [
+          "urn:ocs-demo:evidence:customer-case"
+        ]
+      },
+      "redaction_hints": [
+        {
+          "field_path": "customer_id",
+          "reason": "Synthetic content is sensitive in exported evidence.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": [
+        "synthetic",
+        "customer-service",
+        "read"
+      ],
+      "metadata": {}
+    },
+    {
+      "action_name": "email_send",
+      "action_id": "urn:ocs-demo:action:email-send",
+      "tool_name": "email_tool",
+      "action_type": "external_send",
+      "description": "Send the prepared email draft to the customer.",
+      "default_action": "escalate",
+      "authority_required": [
+        {
+          "scope": "outbound.send",
+          "description": "Declaration only; a downstream resolver must establish a current grant.",
+          "required": true,
+          "source": "ocs-demo"
+        }
+      ],
+      "review_requirement": {
+        "mode": "draft_first",
+        "reason": "Outbound email is reviewed before sending."
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": [
+          "database",
+          "tool"
+        ],
+        "description": "Record the source the operation relied on."
+      },
+      "payload_policy": {
+        "required_fields": [
+          "subject",
+          "body"
+        ],
+        "optional_fields": [],
+        "sensitive_fields": [
+          "body"
+        ],
+        "forbidden_fields": []
+      },
+      "target_policy": {
+        "allowed_targets": [
+          "customer-placeholder@example.com"
+        ],
+        "allow_any_target": false
+      },
+      "effect_limits": {
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      },
+      "authority_context": {
+        "schema_version": "0.1.0",
+        "profile_ref": "urn:cognous:alvorada:public-stack-profile:0.1.0",
+        "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+        "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+        "authority_domain": "customer-service",
+        "consequence_tier": "T1",
+        "evidence_obligation_ids": [
+          "urn:ocs-demo:evidence:customer-case"
+        ]
+      },
+      "redaction_hints": [
+        {
+          "field_path": "body",
+          "reason": "Synthetic content is sensitive in exported evidence.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": [
+        "synthetic",
+        "customer-service",
+        "external_send"
+      ],
+      "metadata": {}
+    }
+  ],
+  "metadata": {
+    "deployment_status": "not_deployed"
+  }
+}

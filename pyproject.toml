@@ -22,13 +22,15 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-# The four components, pinned to the commits in the hub's component-lock.json
-# (recorded in src/ocs/fixtures/customer-service/provenance.json). Direct
+# The four components. Manifest, replay bundle and evidence pack are pinned to the commits in the
+# hub's component-lock.json; the control plane is pinned ahead of it, to the first revision with
+# `acp run` (see docs/demo.md; both are recorded in
+# src/ocs/fixtures/customer-service/provenance.json). Direct
 # references: this extra is for installing from this repository, not for an
 # index upload. Nothing is published from this repository.
 stack = [
     "agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@46c950bed37fe3812000895430bc0312d29e37ce",
-    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@d3dadee70bd319812b207389ab1e0f6efe511916",
+    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@83b49b5e61cdacee916b502cdea775aefc72a064",
     "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@459e4ba62fca49364aebb0050cd5fb2dd5a71bfa",
     "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@b4baccd823d2a73be276c1de745b19cf7c56a0d6",
 ]

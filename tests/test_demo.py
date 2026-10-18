@@ -7,6 +7,7 @@ import json
 import stat
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -163,6 +164,24 @@ def test_unexpected_step_exit_fails_with_demo_expectation(ws: Path, tmp_path: Pa
     assert (ws / "d" / "logs" / "01-aam.txt").is_file()
 
 
+def test_control_step_passes_a_fixed_now_and_expects_exit_1_for_the_send(
+    ws: Path, tmp_path: Path
+) -> None:
+    """A control plane that applies the send (exit 0 everywhere) is a demo failure."""
+    argv_log = tmp_path / "argv.txt"
+    body = f'#!/bin/sh\necho "$@" >> {argv_log}\nexit 0\n'
+    directory = fake_bin(tmp_path, {"acp": body})
+    outcome = demo.run_demo("d", bin_dir=directory, commit_of=pinned)
+    result = outcome.result
+    assert result.reason_codes == ["OCS_DEMO_EXPECTATION"] and result.exit_code == 1
+    assert "exited 0, expected 1" in result.messages[0] and "email-send" in result.messages[0]
+    calls = argv_log.read_text().splitlines()
+    runs = [c for c in calls if c.startswith("run ")]
+    assert len(runs) == 3
+    assert all("--now 2026-10-05T19:00:00Z" in c and "--format json" in c for c in runs)
+    assert [c.split()[0] for c in calls] == ["run", "validate-run"] * 2 + ["run"]
+
+
 def test_step_timeout_is_an_internal_error(ws: Path, tmp_path: Path) -> None:
     directory = fake_bin(tmp_path, {"aam": "#!/bin/sh\nexec /bin/sleep 5\n"})
     outcome = demo.run_demo("d", bin_dir=directory, commit_of=pinned, timeout=0.2)
@@ -215,7 +234,26 @@ def test_demo_end_to_end_exit_0(stack: None, ws: Path, capsys: pytest.CaptureFix
     assert layers == {"declare", "control", "replay", "evidence"}
     page = (ws / "demo-out" / "evidence.html").read_text(encoding="utf-8")
     assert 'chip blocked">blocked' in page and "<code>email_send</code>" in page
+    assert "grant_scope_mismatch" in page
     assert (ws / "demo-out" / "demo-result.json").is_file()
+    # The control step is the real `acp run`: the send is its exit 1, reasons passed through.
+    control = {c["operation"]: c for c in body["extensions"]["x-control"]}
+    assert [control[n]["exit"] for n in ("crm_read", "notes_search", "email_send")] == [0, 0, 1]
+    assert control["email_send"]["reason_codes"] == ["grant_scope_mismatch"]
+    assert control["email_send"]["destination_effects"] == 0
+    acp_steps = [s for s in body["extensions"]["x-steps"] if s["command"].startswith("acp run")]
+    assert [s["exit"] for s in acp_steps] == [0, 0, 1]
+    assert all("--now 2026-10-05T19:00:00Z" in s["command"] for s in acp_steps)
+    assert (
+        sum(s["command"].startswith("acp validate-run") for s in body["extensions"]["x-steps"]) == 3
+    )
+    unproven = " ".join(body["does_not_prove"])
+    assert "did not run" not in unproven and "synthetic" in unproven
+    assert "local file destination" in unproven and "projection" in unproven
+    send_out = ws / "demo-out" / "control" / "email_send" / "out"
+    assert (send_out / "bounded-run-record.json").is_file()
+    row = json.loads((send_out / "run-record.json").read_text())["blocked_actions"][0]
+    assert row["reason"] == "grant_scope_mismatch"
     assert not (ws / "demo-out" / "ci-diagnostics.json").exists()
 
 
@@ -237,29 +275,56 @@ def test_demo_rerun_needs_clean_then_replaces(stack: None, ws: Path) -> None:
     assert main(["demo", "customer-service", "--out", "d", "--clean"]) == 0
 
 
-@pytest.mark.integration
-def test_demo_fails_when_the_block_is_not_evidenced(
-    stack: None, ws: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+def _altered_acp_input(
+    monkeypatch: pytest.MonkeyPatch, name: str, change: Callable[[dict[str, Any]], None]
 ) -> None:
-    """Flip the recorded send decision to allow: components still accept the shape, ocs refuses."""
-    real: Callable[[str], bytes] = fx.read_fixture
+    real: Callable[[str], bytes] = fx.read_acp_run_input
 
-    def altered(name: str) -> bytes:
-        data = real(name)
-        if name != "run-record.json":
+    def altered(requested: str) -> bytes:
+        data = real(requested)
+        if requested != name:
             return data
         doc = json.loads(data)
-        for decision in doc["decisions"]:
-            if decision["result"] == "block":
-                decision["result"] = "allow"
-        doc["blocked_actions"] = []
+        change(doc)
         return json.dumps(doc).encode()
 
-    monkeypatch.setattr(demo, "read_fixture", altered)
+    monkeypatch.setattr(demo, "read_acp_run_input", altered)
+
+
+@pytest.mark.integration
+def test_demo_fails_when_the_control_plane_lets_the_send_through(
+    stack: None, ws: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Make the grant cover outbound.send: acp run applies it (exit 0), the demo refuses."""
+
+    def cover_send(doc: dict[str, Any]) -> None:
+        permissions = doc["grant"]["permissions"]
+        send = next(p for p in doc["requirement"]["permissions"] if p["action"] == "email_send")
+        permissions.append(send)
+
+    _altered_acp_input(monkeypatch, "authority-context.json", cover_send)
     code = main(["--format", "json", "demo", "customer-service", "--out", "d"])
     body = json.loads(capsys.readouterr().out)
     assert code == 1 and body["reason_codes"] == ["OCS_DEMO_EXPECTATION"]
-    assert any("control: email_send is blocked, never allowed" in m for m in body["messages"])
+    assert "acp run" in body["messages"][0] and "exited 0, expected 1" in body["messages"][0]
+
+
+@pytest.mark.integration
+def test_demo_fails_when_the_hold_has_other_reason_codes(
+    stack: None, ws: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Still held, but not for the uncovered permission: the expectation does not hold."""
+
+    def over_limit(doc: dict[str, Any]) -> None:
+        doc["amount"] = 5.0
+
+    _altered_acp_input(monkeypatch, "proposal-email-send.json", over_limit)
+    code = main(["--format", "json", "demo", "customer-service", "--out", "d"])
+    body = json.loads(capsys.readouterr().out)
+    assert code == 1 and body["reason_codes"] == ["OCS_DEMO_EXPECTATION"]
+    assert any("reason codes are passed through unchanged" in m for m in body["messages"])
+    control = {c["operation"]: c for c in body["extensions"]["x-control"]}
+    assert "amount_exceeded" in control["email_send"]["reason_codes"]  # the component's, unchanged
 
 
 @pytest.mark.integration
@@ -267,4 +332,10 @@ def test_real_components_reject_the_negative_controls(stack: None, ws: Path) -> 
     assert main(["demo", "customer-service", "--out", "d"]) == 0
     result = json.loads((ws / "d" / "demo-result.json").read_text())
     negatives = [s for s in result["extensions"]["x-steps"] if s["expected_exit"] == 1]
-    assert len(negatives) == 2 and all(s["exit"] == 1 for s in negatives)
+    # the held send (acp run exit 1) and the two replay negative controls
+    assert [s["command"].split()[0:2] for s in negatives] == [
+        ["acp", "run"],
+        ["arb", "verify"],
+        ["arb", "verify"],
+    ]
+    assert all(s["exit"] == 1 for s in negatives)

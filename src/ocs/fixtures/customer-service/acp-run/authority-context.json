@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.1.0",
+  "interface_status": "proposed_pending_governor_review",
+  "context_id": "urn:ocs-demo:authority-context:customer-service-1",
+  "institution": {
+    "institution_id": "urn:ocs-demo:institution:synthetic-customer-service",
+    "authority_domain": "customer-service",
+    "authority_basis_ref": "urn:ocs-demo:authority-basis:synthetic",
+    "authority_mode": "principle_inspired"
+  },
+  "principal": "urn:ocs-demo:principal:customer-service",
+  "acting_identity": "urn:ocs-demo:identity:customer-service-agent",
+  "accountable_human_role": {
+    "role_id": "urn:ocs-demo:role:accountable-human",
+    "human_principal": "urn:ocs-demo:principal:human-1",
+    "mandate_ref": "urn:ocs-demo:mandate:human-1"
+  },
+  "requirement": {
+    "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+    "governing_sources": [
+      {
+        "ref": "urn:ocs-demo:policy:customer-service-policy",
+        "version": "1.0",
+        "provision": "customer-contact",
+        "standing": "local_policy"
+      }
+    ],
+    "permissions": [
+      {
+        "action": "crm_read",
+        "targets": [
+          "customer:C-7823"
+        ],
+        "data_scopes": [
+          "crm.read"
+        ],
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      },
+      {
+        "action": "notes_search",
+        "targets": [
+          "notes:C-7823"
+        ],
+        "data_scopes": [
+          "notes.search"
+        ],
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      },
+      {
+        "action": "email_send",
+        "targets": [
+          "customer-placeholder@example.com"
+        ],
+        "data_scopes": [
+          "outbound.send"
+        ],
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      }
+    ],
+    "approvals": [],
+    "evidence": [
+      {
+        "obligation_id": "urn:ocs-demo:evidence:customer-case",
+        "kind": "authorization",
+        "source_ref": "urn:ocs-demo:source:customer-case",
+        "max_age_seconds": 300,
+        "required": true,
+        "unknown_behavior": "hold_effect"
+      }
+    ],
+    "consequence": {
+      "tier": "T1",
+      "rationale": "Synthetic demo tier.",
+      "profile_ref": "urn:ocs-demo:consequence:T1"
+    }
+  },
+  "conflicts": {
+    "precedence_refs": [
+      "urn:ocs-demo:policy:customer-service-policy"
+    ],
+    "incompatible_role_pairs": [],
+    "escalation_ref": "urn:ocs-demo:procedure:escalation",
+    "appeal_ref": "urn:ocs-demo:procedure:appeal",
+    "continuity_ref": "urn:ocs-demo:procedure:continuity",
+    "remedy_ref": "urn:ocs-demo:procedure:remedy"
+  },
+  "supporting_evidence_refs": [],
+  "change": {
+    "kind": "none",
+    "proposal_ref": null,
+    "adoption_record_ref": null
+  },
+  "grant": {
+    "grant_id": "urn:ocs-demo:grant:lookup-only-1",
+    "revision": "1",
+    "requirement_id": "urn:ocs-demo:authority-requirement:customer-service-v1",
+    "issuer": "urn:ocs-demo:principal:synthetic-governor",
+    "issuer_role": "urn:ocs-demo:role:synthetic-governor",
+    "issuance_record_ref": "urn:ocs-demo:issuance:1",
+    "grantee": "urn:ocs-demo:principal:customer-service",
+    "acting_identity": "urn:ocs-demo:identity:customer-service-agent",
+    "issued_at": "2026-10-05T18:00:00+00:00",
+    "not_before": "2026-10-05T18:30:00+00:00",
+    "expires_at": "2026-10-05T20:00:00+00:00",
+    "status_ref": "urn:ocs-demo:status:grant-1",
+    "policy_versions": [
+      {
+        "ref": "urn:ocs-demo:policy:customer-service-policy",
+        "version": "1.0"
+      }
+    ],
+    "permissions": [
+      {
+        "action": "crm_read",
+        "targets": [
+          "customer:C-7823"
+        ],
+        "data_scopes": [
+          "crm.read"
+        ],
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      },
+      {
+        "action": "notes_search",
+        "targets": [
+          "notes:C-7823"
+        ],
+        "data_scopes": [
+          "notes.search"
+        ],
+        "max_amount": 0.0,
+        "unit": "count",
+        "max_effects": 1
+      }
+    ],
+    "delegation": {
+      "parent_grant_id": null,
+      "may_delegate": false,
+      "remaining_depth": 0
+    },
+    "approval_refs": []
+  }
+}
