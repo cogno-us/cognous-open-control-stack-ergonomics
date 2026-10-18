@@ -274,6 +274,21 @@ def test_main_refusal_exits_2_never_echoes_the_input_and_leaves_diagnostics(
     assert (diag["exit_code"], diag["outcome"]) == (2, "invalid")
 
 
+def test_main_refusal_replaces_a_diagnostics_link_instead_of_writing_through_it(
+    space: tuple[Path, Path], tmp_path: Path
+) -> None:
+    keep = space[0] / "keep.txt"
+    keep.write_text("KEEP\n")
+    (space[0] / "ocs-out").mkdir()
+    os.symlink(keep, space[0] / "ocs-out" / "ci-diagnostics.json")
+    code, _, _ = run_main(space, tmp_path, retention_days="0")
+    assert code == 2
+    leaf = space[0] / "ocs-out" / "ci-diagnostics.json"
+    assert keep.read_text() == "KEEP\n"
+    assert not leaf.is_symlink()
+    assert json.loads(leaf.read_text())["exit_code"] == 2
+
+
 def test_main_refusal_with_a_bad_output_writes_nothing_outside(
     space: tuple[Path, Path], tmp_path: Path
 ) -> None:
