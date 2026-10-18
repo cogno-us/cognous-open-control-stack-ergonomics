@@ -6,7 +6,7 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import cli, demo, doctor, registry, render, scaffold, validate
+from ocs import cli, demo, doctor, passthrough, registry, render, scaffold, validate
 from ocs.envelope import (
     INVALID,
     OCS_PATHS,
@@ -68,7 +68,17 @@ def validate_command(args: argparse.Namespace) -> cli.Outcome:
 
 
 def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentParser) -> None:
-    evidence = sub.add_parser("evidence", parents=[common], help="evidence pack views")
+    for layer, command in passthrough.LAYERS.items():
+        if layer == "evidence":
+            continue
+        # Listed for --help only: cli.main routes these to passthrough before parsing.
+        sub.add_parser(
+            layer, parents=[common], help=f"run the component command ({command}) as it is"
+        ).add_argument("component_args", nargs=argparse.REMAINDER)
+        cli.HANDLERS[layer] = _unreachable
+    evidence = sub.add_parser(
+        "evidence", parents=[common], help="`render` is ocs's own; other commands run agep as it is"
+    )
     evidence_sub = evidence.add_subparsers(dest="evidence_command", parser_class=type(evidence))
     r = evidence_sub.add_parser("render", parents=[common], help="one self-contained HTML view")
     r.add_argument("path", help="evidence pack JSON")
@@ -94,7 +104,11 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     cli.HANDLERS["evidence"] = _evidence_dispatch
 
 
+def _unreachable(args: argparse.Namespace) -> cli.Outcome:
+    raise cli.UsageError("passthrough commands take the component's arguments after the layer name")
+
+
 def _evidence_dispatch(args: argparse.Namespace) -> cli.Outcome:
     if getattr(args, "evidence_command", None) == "render":
         return evidence_render(args)
-    raise cli.UsageError("evidence needs a subcommand: render")
+    raise cli.UsageError("evidence needs a subcommand: render, or an agep command")

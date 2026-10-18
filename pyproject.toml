@@ -56,7 +56,8 @@ include = ["src/ocs", "tests", "docs", "scripts", ".githooks", "Makefile", "rele
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--disable-socket --cov=ocs --cov-report=term-missing --cov-fail-under=80"
+addopts = "--disable-socket --strict-markers --strict-config --cov=ocs --cov-report=term-missing --cov-fail-under=80"
+filterwarnings = ["error"]
 markers = ["integration: runs the real pinned component commands (needs the stack extra)"]
 
 [tool.coverage.run]

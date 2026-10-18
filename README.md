@@ -1,6 +1,6 @@
 # Cognous Open Control Stack: Ergonomics
 
-Status: Phase 1 (skeleton, offline demo, evidence render). Nothing here changes any Open Control Stack component, and nothing is published from this repository.
+Status: Phase 2 (validate, init, doctor, passthrough) on top of Phase 1 (skeleton, offline demo, evidence render). Nothing here changes any Open Control Stack component, and nothing is published from this repository.
 
 This repository is the front door to the Open Control Stack: one command to install, try, check and wire into CI. It does none of the governing. The components still make every authority decision, refusal, replay and evidence record. If this repository disappeared, the stack would behave exactly as before.
 
@@ -37,6 +37,7 @@ The `stack` extra uses direct git references, so it is for installing from this 
 - [`docs/validate.md`](docs/validate.md): `ocs validate`, the (kind, version) registry, exit mapping and what a pass does not prove.
 - [`docs/init-doctor.md`](docs/init-doctor.md): the workflow scaffold and the read-only setup diagnosis.
 - [`docs/development.md`](docs/development.md): `make check`, `make release-check`, the claim-boundary check and the opt-in pre-push hook.
+- [`docs/testing.md`](docs/testing.md): test defaults (network off, coverage floor, strict types) and the lock per extra.
 - [`docs/evidence-render.md`](docs/evidence-render.md): what `ocs evidence render` shows and what it does not prove.
 
 ## Phases

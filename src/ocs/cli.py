@@ -114,6 +114,12 @@ def _diagnostics_dir(declared: Path | None) -> Path | None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args_in = list(sys.argv[1:] if argv is None else argv)
+    from ocs import passthrough  # lazy: passthrough imports modules that import this one
+
+    pt = passthrough.detect(args_in)
+    if pt is not None:
+        pt_result, relayed = passthrough.execute(pt)
+        return _finish(pt_result, pt.fmt, None, quiet=relayed)
     fmt = "json" if _wants_json(args_in) else "text"
     parser = build_parser()
     try:
@@ -164,8 +170,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     return _finish(result, fmt, diag, read_only=read_only)
 
 
-def _finish(result: Result, fmt: str, diag: Path | None, *, read_only: bool = False) -> int:
-    _emit(result, fmt)
+def _finish(
+    result: Result, fmt: str, diag: Path | None, *, read_only: bool = False, quiet: bool = False
+) -> int:
+    if not quiet:  # quiet: a passthrough already relayed the component's own output
+        _emit(result, fmt)
     code = result.exit_code
     if code != 0 and not read_only:
         target = _diagnostics_dir(diag)

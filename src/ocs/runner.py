@@ -71,9 +71,11 @@ def check_pins(
     return directory
 
 
-def clean_output(raw: bytes, limit: int = OUTPUT_LIMIT) -> str:
-    text = raw.decode("utf-8", errors="replace")[:limit]
-    return "".join(ch if ch == "\n" else strip_controls(ch) for ch in text)
+def clean_output(raw: bytes, limit: int | None = OUTPUT_LIMIT) -> str:
+    text = raw.decode("utf-8", errors="replace")
+    if limit is not None:
+        text = text[:limit]
+    return "".join(ch if ch in "\n\t" else strip_controls(ch) for ch in text)
 
 
 def run_component(
@@ -84,6 +86,7 @@ def run_component(
     cwd: Path | None,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     home: Path | None = None,
+    limit: int | None = OUTPUT_LIMIT,
 ) -> ComponentRun:
     """Run `command args` with a minimal environment; ComponentRunError on timeout or OS error."""
     env = {
@@ -104,4 +107,6 @@ def run_component(
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ComponentRunError(f"{command} could not run ({type(exc).__name__})") from exc
-    return ComponentRun(proc.returncode, clean_output(proc.stdout), clean_output(proc.stderr))
+    return ComponentRun(
+        proc.returncode, clean_output(proc.stdout, limit), clean_output(proc.stderr, limit)
+    )

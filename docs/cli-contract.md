@@ -26,6 +26,8 @@ Scripts, CI jobs and people must be able to rely on what `ocs` returns without p
 
 Surface rule: no other command families. Additions need an owner decision recorded in the backlog.
 
+**Correction (Phase 2), passthrough:** `ocs manifest ARGS` runs `aam ARGS`, `ocs replay ARGS` runs `arb ARGS`, and `ocs evidence ARGS` runs `agep ARGS` (`ocs evidence render` stays `ocs`'s own). Everything after the layer name belongs to the component verbatim, so `ocs` options go before it (`ocs --format json replay verify ...`). In text mode the component's output (control characters stripped) and exit code 0 to 4 are relayed as they are; any other code is not a documented verdict and becomes exit 4 with a note on stderr. With `--format json` the run is wrapped in the envelope: exit 0 is `pass`, 1 `fail` (`OCS_BLOCKING_FINDING`), 2 `invalid` (`OCS_INPUT_INVALID`), 3 `not_evaluated` (`OCS_NOT_APPLICABLE`), anything else `error` (`OCS_INTERNAL`); the component's output goes to `extensions["x-component-output"]`, and the label carries the subcommand only, never arguments (they may hold a secret). There is no `ocs control` layer: the control plane has no public run command.
+
 Global options: `--format text|json` (default `text`), `--strict`, `--out`, `--no-color`.
 
 ## 3. Exit codes
