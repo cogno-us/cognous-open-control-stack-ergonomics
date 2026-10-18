@@ -26,7 +26,7 @@ pip install -e ".[dev,stack]"
 | `make schemas` | Every `schemas/vN/` snapshot matches the hashes in `schemas/SNAPSHOTS.json`; once a `v*` git tag exists, each snapshot directory present at the tag is byte-identical to it. See [schemas.md](schemas.md). |
 | `make actions` | Third-party actions pinned by commit SHA with the release tag in a comment, no `*-latest` runner label, the composite action's inputs and upload paths, and its release version equal to the package version. See [action.md](action.md). |
 | `make build` | Builds the wheel and sdist into `dist/`. |
-| `make release-check` | `check`, then `wheel-check` (required and forbidden wheel members, claim scan of the shipped files) and `smoke` (clean virtualenv install of the wheel, then the demo run under `unshare -n`). `smoke` fails if no network-namespace tool works; `OCS_SMOKE_ALLOW_NO_NETNS=1` runs it without isolation, never in CI. |
+| `make release-check` | `check`, then `wheel-check` (required and forbidden wheel members, both console scripts `ocs` and `cognous-ocs`, a `cognous_ocs-*` dist-info, claim scan of the shipped files) and `smoke` (clean virtualenv install of the wheel, `cognous-ocs --version` equal to `ocs --version`, then the demo run under `unshare -n`). `smoke` fails if no network-namespace tool works; `OCS_SMOKE_ALLOW_NO_NETNS=1` runs it without isolation, never in CI. |
 | `make release-publish-check` | Claim check, then `release-check`, then the authorization gate. The last step fails while `release-state.json` has `publication_authorized` or `production_authorized` false. Passing gates never authorizes publication. |
 
 ## Claim boundary

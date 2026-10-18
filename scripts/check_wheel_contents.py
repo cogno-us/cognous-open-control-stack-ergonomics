@@ -61,8 +61,12 @@ def check(wheel: Path) -> list[str]:
         ):
             errors.append("LICENSE missing from dist-info")
         entry = next((n for n in names if n.endswith(".dist-info/entry_points.txt")), None)
-        if entry is None or "ocs = ocs.cli:main" not in zf.read(entry).decode():
-            errors.append("console script `ocs = ocs.cli:main` missing")
+        scripts = zf.read(entry).decode() if entry is not None else ""
+        for line in ("ocs = ocs.cli:main", "cognous-ocs = ocs.cli:main"):
+            if line not in scripts.splitlines():
+                errors.append(f"console script `{line}` missing")
+        if not any(n.split("/")[0].startswith("cognous_ocs-") for n in names):
+            errors.append("dist-info is not named for the distribution `cognous-ocs`")
         meta = next((n for n in names if n.endswith(".dist-info/METADATA")), None)
         if (
             meta is None

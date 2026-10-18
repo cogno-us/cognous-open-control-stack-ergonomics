@@ -197,10 +197,10 @@ def test_missing_or_malformed_state_counts_as_hold(tmp_path: Path, mode: str) ->
 
 def test_built_wheel_text_is_scanned(tmp_path: Path) -> None:
     write_repo(tmp_path)
-    wheel = tmp_path / "ocs-0-py3-none-any.whl"
+    wheel = tmp_path / "cognous_ocs-0-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as zf:
-        zf.writestr("ocs-0.dist-info/METADATA", f"Name: ocs\n\nIt is {COMPL}.\n")
-        zf.writestr("ocs-0.dist-info/licenses/LICENSE", f"{COMPL}\n")
+        zf.writestr("cognous_ocs-0.dist-info/METADATA", f"Name: cognous-ocs\n\nIt is {COMPL}.\n")
+        zf.writestr("cognous_ocs-0.dist-info/licenses/LICENSE", f"{COMPL}\n")
         zf.writestr("ocs/data.bin", b"\xff\xfe")
     code, msgs = cb.run(tmp_path, [wheel])
     assert code == 1
@@ -213,12 +213,15 @@ def test_wheel_readme_uses_readme_allow_list_but_header_does_not(tmp_path: Path)
     entry = {"path": "README.md", "rule": "certified", "line": line, "reason": "states the rule"}
     write_repo(tmp_path, allow=[entry])
     (tmp_path / "README.md").write_text(f"# T\n\n{line}\n")
-    wheel = tmp_path / "ocs-0-py3-none-any.whl"
+    wheel = tmp_path / "cognous_ocs-0-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as zf:
-        zf.writestr("ocs-0.dist-info/METADATA", f"Name: ocs\n\n# T\n\n{line}\n")
+        zf.writestr("cognous_ocs-0.dist-info/METADATA", f"Name: cognous-ocs\n\n# T\n\n{line}\n")
     assert cb.run(tmp_path, [wheel])[0] == 0
     with zipfile.ZipFile(wheel, "w") as zf:
-        zf.writestr("ocs-0.dist-info/METADATA", f"Name: ocs\nSummary: {line}\n\n# T\n\n{line}\n")
+        zf.writestr(
+            "cognous_ocs-0.dist-info/METADATA",
+            f"Name: cognous-ocs\nSummary: {line}\n\n# T\n\n{line}\n",
+        )
     code, msgs = cb.run(tmp_path, [wheel])
     assert code == 1
     assert any("#header" in m for m in msgs)

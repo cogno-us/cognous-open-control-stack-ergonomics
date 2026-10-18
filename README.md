@@ -15,19 +15,19 @@ This repository is the front door to the Open Control Stack: one command to inst
 
 ## Naming
 
-Repository: `cognous-open-control-stack-ergonomics`. Command: `ocs` (subject to a package-name check before any publication). Publication is not authorized; nothing is released from this repository while the stack's publication decision is on HOLD.
+Repository: `cognous-open-control-stack-ergonomics`. Distribution (package) name: `cognous-ocs`. Command: `ocs`, with `cognous-ocs` as an alias console script for the same entry point; the import module is `ocs`. Publication is not authorized; nothing is released from this repository while the stack's publication decision is on HOLD.
 
 ## Quick start
 
 ```
 python -m venv .venv && . .venv/bin/activate
 pip install ".[stack]"     # the four components; the control plane is pinned ahead of the hub lock (docs/demo.md)
-ocs --version
+ocs --version                # `cognous-ocs --version` prints the same
 ocs demo customer-service --out demo-out   # offline; exit 0 only if the blocked email send is evidenced
 ocs evidence render demo-out/outputs/evidence-pack.json --out view.html
 ```
 
-The `stack` extra uses direct git references, so it is for installing from this repository, not for an index upload.
+The distribution is `cognous-ocs` (what `pip list` shows; wheel `cognous_ocs-<version>-py3-none-any.whl`); `ocs` and `cognous-ocs` are both console scripts for the same entry point. The `stack` extra uses direct git references, so it is for installing from this repository, not for an index upload.
 
 ## Contents
 

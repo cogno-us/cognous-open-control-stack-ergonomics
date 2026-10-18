@@ -13,7 +13,7 @@ Writes the schema snapshots bundled with this release into `DIR`: `SNAPSHOTS.jso
 | `envelope.schema.json` | The result object `ocs --format json` prints (cli-contract section 4), `envelope_version` `1`. |
 | `diagnostics.schema.json` | `ci-diagnostics.json` (cli-contract section 5). |
 
-These describe what `ocs` itself emits. Component artifact schemas belong to the components; the (kind, version) registry behind `ocs validate` lives in `src/ocs/registry.py` and is not copied here. A schema is a shape, not a verdict, and every contract is still a draft: the snapshots are named by `envelope_version`, nothing is tagged or released.
+These describe what `ocs` itself emits. Their `$id` urns (`urn:ocs:schema:...`) name the tool, not the distribution, so renaming the distribution to `cognous-ocs` did not touch any snapshot. Component artifact schemas belong to the components; the (kind, version) registry behind `ocs validate` lives in `src/ocs/registry.py` and is not copied here. A schema is a shape, not a verdict, and every contract is still a draft: the snapshots are named by `envelope_version`, nothing is tagged or released.
 
 ## Where the files live
 

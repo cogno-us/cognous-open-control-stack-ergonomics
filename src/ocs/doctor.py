@@ -129,7 +129,8 @@ def check_version(bin_dir: Path | None, commit_of: Callable[[str], str | None]) 
             "OCS_VERSION",
             FAILED,
             str(exc).split(". Install with")[0],
-            "install the pinned components: pip install 'ocs[stack]' (from this repository)",
+            "install the pinned components: "
+            "pip install 'cognous-ocs[stack]' (from this repository)",
         )
     return Check("OCS_VERSION", OK, "all four components are installed at their pinned commits")
 

@@ -1,7 +1,7 @@
 """Clean-virtualenv install smoke test.
 
 Installs the built wheel (with the pinned `stack` extra, which needs network at install time
-only) into a fresh venv, then runs `ocs --version` and the customer-service demo with the
+only) into a fresh venv, then runs `ocs --version` (and the `cognous-ocs` alias, which must print the same) and the customer-service demo with the
 network namespace removed (`unshare -n`). Exit 0 within the time limit and a blocked send in
 the rendered HTML are required. If no network-namespace tool works the smoke test FAILS;
 set OCS_SMOKE_ALLOW_NO_NETNS=1 to run without isolation (never in CI).
@@ -67,6 +67,10 @@ def main(argv: list[str] | None = None) -> int:
     version = run([ocs, "--version"])
     if version.returncode != 0 or not version.stdout.startswith("ocs "):
         print("smoke: `ocs --version` failed")
+        return 1
+    alias = run([str(venv / "bin" / "cognous-ocs"), "--version"])
+    if alias.returncode != 0 or alias.stdout != version.stdout:
+        print("smoke: `cognous-ocs --version` differs from `ocs --version`")
         return 1
     schemas_out = work / "schemas"
     if schemas_out.exists():

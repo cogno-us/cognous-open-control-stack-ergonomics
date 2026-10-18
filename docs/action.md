@@ -12,7 +12,7 @@
     evidence-pack: path/to/evidence-pack.json
 ```
 
-Nothing is published from this repository, so there is no released action reference yet; use a commit SHA of a checkout you control, or `./.github/actions/ocs` in this repository.
+The action installs this checkout (distribution `cognous-ocs`, extra `stack`) into its own venv and runs the `ocs` console script from it. Nothing is published from this repository, so there is no released action reference yet; use a commit SHA of a checkout you control, or `./.github/actions/ocs` in this repository.
 
 ## Inputs
 

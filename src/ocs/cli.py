@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NoReturn
 
-from ocs import CONTRACT_VERSION, EXAMPLE_NAME, __version__
+from ocs import CONTRACT_VERSION, DISTRIBUTION, EXAMPLE_NAME, __version__
 from ocs.envelope import (
     ERROR,
     INVALID,
@@ -81,7 +81,11 @@ def _register(sub: argparse._SubParsersAction[_Parser]) -> None:
 
 
 def version_text() -> str:
-    lines = [f"ocs {__version__}", f"cli-contract {CONTRACT_VERSION}"]
+    lines = [
+        f"ocs {__version__}",
+        f"distribution {DISTRIBUTION}",
+        f"cli-contract {CONTRACT_VERSION}",
+    ]
     lines.append(f"bundled-example {EXAMPLE_NAME} {example_version()}")
     for c in COMPONENTS.values():
         lines.append(f"bundled-component {c.command} {c.repository}@{c.sha[:12]}")

@@ -133,10 +133,12 @@ def test_lock_file_must_carry_every_pin(repo_copy: Path) -> None:
 
 def make_wheel(path: Path, extra: dict[str, str] | None = None, drop: str | None = None) -> Path:
     members = {name: "x" for name in wheel.REQUIRED}
-    members["ocs-0.dist-info/licenses/LICENSE"] = "x"
-    members["ocs-0.dist-info/entry_points.txt"] = "[console_scripts]\nocs = ocs.cli:main\n"
-    members["ocs-0.dist-info/METADATA"] = (
-        "Name: ocs\nProvides-Extra: stack\nRequires-Dist: agent-x; extra == 'stack'\n"
+    members["cognous_ocs-0.dist-info/licenses/LICENSE"] = "x"
+    members["cognous_ocs-0.dist-info/entry_points.txt"] = (
+        "[console_scripts]\nocs = ocs.cli:main\ncognous-ocs = ocs.cli:main\n"
+    )
+    members["cognous_ocs-0.dist-info/METADATA"] = (
+        "Name: cognous-ocs\nProvides-Extra: stack\nRequires-Dist: agent-x; extra == 'stack'\n"
     )
     members["ocs/schema_resources/v1/envelope.schema.json"] = "{}"
     members.update(extra or {})
@@ -168,7 +170,9 @@ def test_core_dependency_on_a_component_fails(tmp_path: Path) -> None:
     bad = make_wheel(
         tmp_path / "a.whl",
         extra={
-            "ocs-0.dist-info/METADATA": "Name: ocs\nRequires-Dist: agent-x\nProvides-Extra: stack\n"
+            "cognous_ocs-0.dist-info/METADATA": (
+                "Name: cognous-ocs\nRequires-Dist: agent-x\nProvides-Extra: stack\n"
+            )
         },
     )
     assert any("optional extra" in e for e in wheel.check(bad))
@@ -238,3 +242,34 @@ def test_makefile_order_and_no_publish_command() -> None:
         "actions",
         "build",
     ]
+
+
+def test_wheel_without_the_alias_script_fails(tmp_path: Path) -> None:
+    bad = make_wheel(
+        tmp_path / "a.whl",
+        extra={
+            "cognous_ocs-0.dist-info/entry_points.txt": "[console_scripts]\nocs = ocs.cli:main\n"
+        },
+    )
+    assert any("`cognous-ocs = ocs.cli:main` missing" in e for e in wheel.check(bad))
+
+
+def test_wheel_without_the_ocs_script_fails(tmp_path: Path) -> None:
+    bad = make_wheel(
+        tmp_path / "a.whl",
+        extra={
+            "cognous_ocs-0.dist-info/entry_points.txt": (
+                "[console_scripts]\ncognous-ocs = ocs.cli:main\n"
+            )
+        },
+    )
+    assert any("`ocs = ocs.cli:main` missing" in e for e in wheel.check(bad))
+
+
+def test_wheel_must_be_named_for_the_distribution(tmp_path: Path) -> None:
+    bad = make_wheel(tmp_path / "a.whl")
+    old = tmp_path / "old.whl"
+    with zipfile.ZipFile(bad) as src, zipfile.ZipFile(old, "w") as dst:
+        for name in src.namelist():
+            dst.writestr(name.replace("cognous_ocs-0", "ocs-0"), src.read(name))
+    assert any("not named for the distribution" in e for e in wheel.check(old))

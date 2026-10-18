@@ -200,7 +200,8 @@ def resolve_components(
             problems.append(f"{comp.distribution} is at {shown}, expected {comp.sha[:12]}")
     if problems:
         raise ComponentProblem(
-            "; ".join(problems) + ". Install with: pip install 'ocs[stack]' (from this repository)"
+            "; ".join(problems)
+            + ". Install with: pip install 'cognous-ocs[stack]' (from this repository)"
         )
     return directory
 

@@ -14,7 +14,7 @@ Scripts, CI jobs and people must be able to rely on what `ocs` returns without p
 
 | Command | Purpose | Writes |
 |---|---|---|
-| `ocs --version` | Print CLI, contract and bundled-component versions | nothing |
+| `ocs --version` | Print CLI, distribution, contract and bundled-component versions (`cognous-ocs --version` is identical) | nothing |
 | `ocs demo customer-service --out DIR [--clean] [--strict]` | Run the bundled customer-service example offline; succeed only if the blocked email send is evidenced | `DIR` only |
 | `ocs validate PATH --kind KIND` | Check one artifact. Kinds: `manifest`, `run-record`, `replay-bundle`, `evidence-pack` | nothing |
 | `ocs init workflow --out DIR` | Scaffold a manifest, a policy file and a sample run record | `DIR` only |
@@ -140,6 +140,6 @@ No output, document or action label may say certified, compliant or production-r
 
 ## 11. Open points (defaults recorded, owner review at the end)
 
-- Command name `ocs`: package-name check pending.
+- **Decided (owner):** the distribution is named `cognous-ocs`; the typed command stays `ocs`, with `cognous-ocs` as an alias console script (both resolve to `ocs.cli:main` and print identical output); the import module stays `ocs`. The envelope names the tool by `command` and schema urns (`urn:ocs:schema:...`), neither of which names the distribution, so the envelope and the immutable v1 snapshots are unchanged. `ocs --version` keeps `ocs <version>` as its first line and gains a second line `distribution cognous-ocs`. Nothing is published; the name check itself is still not done.
 - Python only for the first release; no npm wrapper.
 - The `review` outcome exiting 0 by default is a choice; the alternative is exit 1.
