@@ -1,8 +1,8 @@
 """Lock freshness: the `stack` extra pins equal ocs.lock, and any *.lock files agree.
 
 The pins are the hub component-lock commits (see provenance.json). A stale or edited pin
-fails. If requirements*.lock files exist they must mention every pinned commit; none exist
-today, in which case that part reports "no lock files" and passes.
+fails. Each extra needs requirements/<extra>.txt naming every dependency it declares (regenerate with
+uv, see docs/testing.md); any requirements*.lock file must mention every pinned commit.
 """
 
 from __future__ import annotations
@@ -15,6 +15,32 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _repo  # noqa: E402
+
+
+def _name(requirement: str) -> str:
+    return re.sub(r"[-_.]+", "-", re.split(r"[\s<>=!~;\[@]", requirement, maxsplit=1)[0]).lower()
+
+
+def check_requirement_locks(root: Path, extras: dict[str, list[str]]) -> list[str]:
+    """requirements/<extra>.txt exists and names every dependency its extra declares."""
+    errors: list[str] = []
+    for extra, requirements in sorted(extras.items()):
+        lock = root / "requirements" / f"{extra}.txt"
+        if not lock.is_file():
+            errors.append(f"requirements/{extra}.txt is missing")
+            continue
+        locked = {
+            _name(m)
+            for m in re.findall(
+                r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:==| @ )", lock.read_text(encoding="utf-8"), re.M
+            )
+        }
+        errors += [
+            f"requirements/{extra}.txt does not lock {_name(r)}; regenerate it (docs/testing.md)"
+            for r in requirements
+            if _name(r) not in locked
+        ]
+    return errors
 
 
 def check(root: Path) -> list[str]:
@@ -41,6 +67,7 @@ def check(root: Path) -> list[str]:
             for c in COMPONENTS.values()
             if c.sha not in text
         ]
+    errors += check_requirement_locks(root, project["optional-dependencies"])
     return errors
 
 

@@ -39,6 +39,7 @@ The `stack` extra uses direct git references, so it is for installing from this 
 - [`docs/development.md`](docs/development.md): `make check`, `make release-check`, the claim-boundary check and the opt-in pre-push hook.
 - [`docs/testing.md`](docs/testing.md): test defaults (network off, coverage floor, strict types) and the lock per extra.
 - [`docs/schemas.md`](docs/schemas.md): `ocs schema export` and the schema snapshots for the result envelope and diagnostics file.
+- [`docs/action.md`](docs/action.md): the composite GitHub Action, `ocs ci`, and what the action guarantees.
 - [`docs/evidence-render.md`](docs/evidence-render.md): what `ocs evidence render` shows and what it does not prove.
 
 ## Phases

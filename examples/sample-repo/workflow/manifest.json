@@ -1,0 +1,117 @@
+{
+  "manifest_version": "1.0",
+  "manifest_id": "scaffold-workflow-v1",
+  "agent_name": "Scaffold Workflow Agent",
+  "agent_description": "Synthetic starter workflow: reads notes and may send a report.",
+  "owner": "replace-with-your-team",
+  "environment": "development",
+  "default_action": "escalate",
+  "tools": [
+    {
+      "tool_name": "notes_tool",
+      "description": "Reads and searches internal notes.",
+      "allowed": true,
+      "external_system": null,
+      "data_classification": "internal"
+    },
+    {
+      "tool_name": "mail_tool",
+      "description": "Sends a report to an external recipient.",
+      "allowed": true,
+      "external_system": "mail",
+      "data_classification": "confidential"
+    }
+  ],
+  "actions": [
+    {
+      "action_name": "notes_read",
+      "tool_name": "notes_tool",
+      "action_type": "read",
+      "description": "Read an internal note.",
+      "default_action": null,
+      "authority_required": [],
+      "review_requirement": {
+        "mode": "none"
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": [
+          "database"
+        ],
+        "description": "A note read is recorded as a reliance source."
+      },
+      "payload_policy": {
+        "required_fields": [
+          "note_id"
+        ],
+        "optional_fields": [],
+        "sensitive_fields": [],
+        "forbidden_fields": []
+      },
+      "redaction_hints": [],
+      "tags": [
+        "notes",
+        "read"
+      ],
+      "metadata": {}
+    },
+    {
+      "action_name": "report_send",
+      "tool_name": "mail_tool",
+      "action_type": "external_send",
+      "description": "Send a report to an external recipient.",
+      "default_action": null,
+      "authority_required": [
+        {
+          "scope": "report.send.external",
+          "description": "Permission to send a report outside the organisation.",
+          "required": true,
+          "source": "replace-with-your-team"
+        }
+      ],
+      "review_requirement": {
+        "mode": "approval_required",
+        "reviewer_role": "replace-with-reviewer-role",
+        "reason": "Every external report needs approval before sending."
+      },
+      "reliance_requirement": {
+        "required": true,
+        "allowed_source_types": [
+          "tool",
+          "user_input"
+        ],
+        "description": "The approved draft is recorded as a reliance source."
+      },
+      "payload_policy": {
+        "required_fields": [
+          "to",
+          "subject",
+          "body"
+        ],
+        "optional_fields": [],
+        "sensitive_fields": [
+          "to",
+          "body"
+        ],
+        "forbidden_fields": []
+      },
+      "redaction_hints": [
+        {
+          "field_path": "to",
+          "reason": "The recipient must be redacted in exported records.",
+          "replacement": "[REDACTED]"
+        }
+      ],
+      "tags": [
+        "report",
+        "send",
+        "external"
+      ],
+      "metadata": {}
+    }
+  ],
+  "metadata": {
+    "synthetic": true,
+    "note": "Starter file written by ocs init workflow."
+  }
+}

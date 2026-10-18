@@ -1,0 +1,162 @@
+name: ocs
+description: >-
+  Run ocs ci on a workflow in CI: validate the declared artifacts through the pinned component
+  validators, write reports and diagnostics, and upload a minimal set by default. It relays
+  component verdicts and decides nothing. Version-bound, fail-closed, path-confined.
+inputs:
+  manifest:
+    description: Action manifest file to validate.
+    required: false
+    default: ''
+  workflow:
+    description: Workflow directory (see ocs init workflow) to check and validate.
+    required: false
+    default: ''
+  evidence-pack:
+    description: Strict evidence input, the evidence pack to validate. Choose this or non-assurance, never both.
+    required: false
+    default: ''
+  non-assurance:
+    description: >-
+      Explicit non-assurance mode, 'true' or 'false'. No evidence pack is checked and the outcome
+      is review, never pass. Choose this or evidence-pack, never both.
+    required: false
+    default: 'false'
+  strict:
+    description: "'true' makes a review outcome exit 1."
+    required: false
+    default: 'false'
+  out-dir:
+    description: Output directory inside the workspace or the runner temp directory.
+    required: false
+    default: ocs-out
+  report-mode:
+    description: "'full' runs every check; 'fail-fast' stops at the first failing check."
+    required: false
+    default: full
+  upload-reports:
+    description: "'true' uploads the evidence pack, summaries, per-check reports and diagnostics."
+    required: false
+    default: 'true'
+  upload-full-artifacts:
+    description: "'true' also uploads the whole output directory including copies of raw inputs. Off by default."
+    required: false
+    default: 'false'
+  retention-days:
+    description: Artifact retention in days, 1 to 90.
+    required: false
+    default: '14'
+  upload-name:
+    description: Artifact name (the full upload appends -full).
+    required: false
+    default: ocs-reports
+  install:
+    description: >-
+      'source' installs the ocs in this action's own checkout with the pinned component extra.
+      'preinstalled' uses the ocs already on PATH. Either way the installed version must equal
+      the version this action was released with, or the run exits 2.
+    required: false
+    default: source
+outputs:
+  exit-code:
+    description: The exit code of ocs ci (0 to 4). The action step itself exits with it.
+    value: ${{ steps.run.outputs.exit-code }}
+  out-dir:
+    description: The confined absolute output directory.
+    value: ${{ steps.confine.outputs.out-dir }}
+runs:
+  using: composite
+  steps:
+    # Inputs reach scripts only through env, never by interpolation into shell text.
+    - id: confine
+      shell: bash
+      env:
+        OCS_IN_MANIFEST: ${{ inputs.manifest }}
+        OCS_IN_WORKFLOW: ${{ inputs.workflow }}
+        OCS_IN_EVIDENCE_PACK: ${{ inputs.evidence-pack }}
+        OCS_IN_NON_ASSURANCE: ${{ inputs.non-assurance }}
+        OCS_IN_STRICT: ${{ inputs.strict }}
+        OCS_IN_OUT_DIR: ${{ inputs.out-dir }}
+        OCS_IN_REPORT_MODE: ${{ inputs.report-mode }}
+        OCS_IN_UPLOAD_REPORTS: ${{ inputs.upload-reports }}
+        OCS_IN_UPLOAD_FULL: ${{ inputs.upload-full-artifacts }}
+        OCS_IN_RETENTION_DAYS: ${{ inputs.retention-days }}
+        OCS_IN_UPLOAD_NAME: ${{ inputs.upload-name }}
+        OCS_IN_INSTALL: ${{ inputs.install }}
+      run: python3 "$GITHUB_ACTION_PATH/confine_inputs.py"
+
+    - id: install
+      if: inputs.install == 'source'
+      shell: bash
+      run: |
+        root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
+        python3 -m venv "$RUNNER_TEMP/ocs-action-venv"
+        "$RUNNER_TEMP/ocs-action-venv/bin/python" -m pip install --quiet "$root[stack]"
+        echo "OCS_ACTION_BIN=$RUNNER_TEMP/ocs-action-venv/bin/ocs" >> "$GITHUB_ENV"
+
+    - id: run
+      shell: bash
+      env:
+        OCS_MANIFEST: ${{ inputs.manifest }}
+        OCS_WORKFLOW: ${{ inputs.workflow }}
+        OCS_EVIDENCE_PACK: ${{ inputs.evidence-pack }}
+        OCS_NON_ASSURANCE: ${{ inputs.non-assurance }}
+        OCS_STRICT: ${{ inputs.strict }}
+        OCS_OUT_DIR: ${{ steps.confine.outputs.out-dir }}
+        OCS_REPORT_MODE: ${{ steps.confine.outputs.report-mode }}
+        OCS_UPLOAD_FULL: ${{ steps.confine.outputs.upload-full }}
+      run: |
+        set +e
+        bin="${OCS_ACTION_BIN:-ocs}"
+        expected="$(tr -d '\r\n' < "$GITHUB_ACTION_PATH/release-version.txt")"
+        args=(ci --out "$OCS_OUT_DIR" --report-mode "$OCS_REPORT_MODE" --expect-version "$expected")
+        [ -n "$OCS_MANIFEST" ] && args+=(--manifest "$OCS_MANIFEST")
+        [ -n "$OCS_WORKFLOW" ] && args+=(--workflow "$OCS_WORKFLOW")
+        [ -n "$OCS_EVIDENCE_PACK" ] && args+=(--evidence-pack "$OCS_EVIDENCE_PACK")
+        [ "$OCS_NON_ASSURANCE" = "true" ] && args+=(--non-assurance)
+        [ "$OCS_STRICT" = "true" ] && args+=(--strict)
+        [ "$OCS_UPLOAD_FULL" = "true" ] && args+=(--copy-inputs)
+        "$bin" "${args[@]}"
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        if [ -f "$OCS_OUT_DIR/ci-summary.md" ]; then cat "$OCS_OUT_DIR/ci-summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+        exit 0
+
+    # Minimal upload: only these named paths, never the whole directory.
+    - id: upload-reports
+      if: always() && steps.confine.outputs.upload-reports == 'true' && steps.confine.outputs.out-dir != ''
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: ${{ steps.confine.outputs.upload-name }}
+        path: |
+          ${{ steps.confine.outputs.out-dir }}/ci-summary.json
+          ${{ steps.confine.outputs.out-dir }}/ci-summary.md
+          ${{ steps.confine.outputs.out-dir }}/ci-diagnostics.json
+          ${{ steps.confine.outputs.out-dir }}/evidence/
+          ${{ steps.confine.outputs.out-dir }}/reports/
+        retention-days: ${{ steps.confine.outputs.retention-days }}
+        if-no-files-found: ignore
+        include-hidden-files: false
+
+    # Explicit opt-in: the whole output directory, including copies of raw inputs.
+    - id: upload-full
+      if: always() && steps.confine.outputs.upload-full == 'true' && steps.confine.outputs.out-dir != ''
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: ${{ steps.confine.outputs.upload-name }}-full
+        path: ${{ steps.confine.outputs.out-dir }}/
+        retention-days: ${{ steps.confine.outputs.retention-days }}
+        if-no-files-found: ignore
+        include-hidden-files: false
+
+    - id: propagate
+      if: always() && steps.run.outputs.exit-code != ''
+      shell: bash
+      env:
+        OCS_EXIT: ${{ steps.run.outputs.exit-code }}
+      run: |
+        case "$OCS_EXIT" in
+          0) exit 0 ;;
+          1|2|3) exit "$OCS_EXIT" ;;
+          *) exit 4 ;;
+        esac

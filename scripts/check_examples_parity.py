@@ -55,12 +55,41 @@ def check(root: Path, source_dir: Path | None = None) -> list[str]:
     return errors
 
 
+SAMPLE = Path("examples") / "sample-repo"
+
+
+def check_sample(root: Path) -> list[str]:
+    """The sample repository is the scaffold output plus the bundled evidence pack, byte for byte."""
+    sys.path.insert(0, str(root / "src"))
+    from ocs import scaffold
+
+    errors: list[str] = []
+    base = root / SAMPLE
+    for name, content in sorted(scaffold.managed_bytes().items()):
+        target = base / "workflow" / name
+        if not target.is_file() or target.read_bytes() != content:
+            errors.append(f"{SAMPLE}/workflow/{name}: differs from `ocs init workflow` output")
+    extra = (
+        {p.name for p in (base / "workflow").iterdir()} - set(scaffold.managed_bytes())
+        if (base / "workflow").is_dir()
+        else set()
+    )
+    errors += [f"{SAMPLE}/workflow/{name}: not part of the scaffold" for name in sorted(extra)]
+    pack = root / "src" / "ocs" / "fixtures" / EXAMPLE / "evidence-pack.json"
+    mine = base / "evidence" / "evidence-pack.json"
+    if not mine.is_file() or mine.read_bytes() != pack.read_bytes():
+        errors.append(
+            f"{SAMPLE}/evidence/evidence-pack.json: differs from the bundled evidence pack"
+        )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--root", type=Path, default=_repo.ROOT)
     ap.add_argument("--source-dir", type=Path, default=None)
     args = ap.parse_args(argv)
-    errors = check(args.root, args.source_dir)
+    errors = check(args.root, args.source_dir) + check_sample(args.root)
     print("\n".join(errors) if errors else "examples parity: ok")
     return 1 if errors else 0
 

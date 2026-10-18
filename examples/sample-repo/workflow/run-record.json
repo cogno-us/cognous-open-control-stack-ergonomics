@@ -1,0 +1,106 @@
+{
+  "run_id": "run-scaffold-001",
+  "task": "Read a note and attempt to send a report.",
+  "created_at": "2026-01-01T00:00:00+00:00",
+  "frame": {
+    "frame_id": "frame-scaffold-001",
+    "task": "Read a note and attempt to send a report.",
+    "actor": "scaffold-workflow-agent",
+    "environment": "development",
+    "allowed_tools": [
+      "notes_read"
+    ],
+    "blocked_tools": [
+      "report_send"
+    ],
+    "policy_version": "scaffold-policy-0.1",
+    "created_at": "2026-01-01T00:00:00+00:00"
+  },
+  "actions": [
+    {
+      "action_id": "action-scaffold-001",
+      "run_id": "run-scaffold-001",
+      "tool_name": "notes_read",
+      "action_type": "read",
+      "target": "note:N-1",
+      "payload": {
+        "note_id": "N-1"
+      },
+      "proposed_at": "2026-01-01T00:00:01+00:00",
+      "reason": "Read the note the report is based on."
+    },
+    {
+      "action_id": "action-scaffold-002",
+      "run_id": "run-scaffold-001",
+      "tool_name": "report_send",
+      "action_type": "external_send",
+      "target": "recipient@example.invalid",
+      "payload": {
+        "to": "recipient@example.invalid",
+        "subject": "Report",
+        "body": "..."
+      },
+      "proposed_at": "2026-01-01T00:00:03+00:00",
+      "reason": "Send the report."
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "decision-scaffold-001",
+      "action_id": "action-scaffold-001",
+      "run_id": "run-scaffold-001",
+      "result": "allow",
+      "policy_name": "read_allowed_tool_policy",
+      "reason": "Tool 'notes_read' is allowed and action type is 'read'.",
+      "decided_at": "2026-01-01T00:00:02+00:00",
+      "deterministic_fingerprint": "fp-scaffold-notes-read"
+    },
+    {
+      "decision_id": "decision-scaffold-002",
+      "action_id": "action-scaffold-002",
+      "run_id": "run-scaffold-001",
+      "result": "block",
+      "policy_name": "blocked_tool_policy",
+      "reason": "Tool 'report_send' is blocked in this frame: external-send authority is missing.",
+      "decided_at": "2026-01-01T00:00:04+00:00",
+      "deterministic_fingerprint": "fp-scaffold-report-send"
+    }
+  ],
+  "authority_records": [
+    {
+      "authority_id": "authority-scaffold-001",
+      "run_id": "run-scaffold-001",
+      "actor": "scaffold-workflow-agent",
+      "scope": [
+        "read"
+      ],
+      "expires_at": null,
+      "source": "user_consent",
+      "created_at": "2026-01-01T00:00:00+00:00"
+    }
+  ],
+  "reliance_records": [
+    {
+      "reliance_id": "reliance-scaffold-001",
+      "run_id": "run-scaffold-001",
+      "source_name": "notes_read",
+      "source_type": "tool",
+      "scope": "note N-1",
+      "referenced_action_id": "action-scaffold-001",
+      "created_at": "2026-01-01T00:00:02+00:00"
+    }
+  ],
+  "blocked_actions": [
+    {
+      "blocked_id": "blocked-scaffold-001",
+      "action_id": "action-scaffold-002",
+      "run_id": "run-scaffold-001",
+      "reason": "Tool 'report_send' is blocked in this frame: external-send authority is missing.",
+      "policy_name": "blocked_tool_policy",
+      "blocked_at": "2026-01-01T00:00:04+00:00"
+    }
+  ],
+  "completed": true,
+  "final_output": "Note read; report send blocked: external-send authority is missing.",
+  "replay_bundle_id": null
+}

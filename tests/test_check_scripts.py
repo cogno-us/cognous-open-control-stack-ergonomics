@@ -235,5 +235,6 @@ def test_makefile_order_and_no_publish_command() -> None:
         "claims",
         "examples",
         "schemas",
+        "actions",
         "build",
     ]
