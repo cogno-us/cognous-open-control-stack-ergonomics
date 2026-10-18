@@ -214,8 +214,8 @@ def page_of(ws: Path, *docs: Any) -> str:
 
 
 def body_text(page: str) -> str:
-    page = re.sub(r"<style>.*?</style>", "", page, flags=re.S)
-    page = re.sub(r"<script>.*?</script>", "", page, flags=re.S)
+    page = re.sub(r"<style>.*?</style>", "", page, flags=re.S | re.I)
+    page = re.sub(r"<script>.*?</script>", "", page, flags=re.S | re.I)
     page = re.sub(r"<meta[^>]*>", "", page)
     return re.sub(r"<[^>]+>", " ", page)
 
@@ -352,7 +352,7 @@ def test_no_composite_score_grade_or_traffic_light(ws: Path, builder: Any) -> No
 
 def test_no_composite_in_source_and_css(ws: Path) -> None:
     page = page_of(ws, mutation_report())
-    assert "%" not in re.sub(r"<style>.*?</style>", "", page, flags=re.S).replace("100%", "")
+    assert "%" not in re.sub(r"<style>.*?</style>", "", page, flags=re.S | re.I).replace("100%", "")
     for color in ("#0ca30c", "#d03b3b", "#fab219"):  # the reserved status palette is not used
         assert color not in page.lower()
     assert "<progress" not in page and "<meter" not in page and "conic-gradient" not in page
@@ -384,7 +384,7 @@ def test_page_is_self_contained_and_script_is_hash_pinned(ws: Path) -> None:
     import base64
     import hashlib
 
-    script = re.search(r"<script>(.*?)</script>", page, re.S)
+    script = re.search(r"<script>(.*?)</script>", page, re.S | re.I)
     assert script is not None
     assert base64.b64encode(hashlib.sha256(script.group(1).encode()).digest()).decode() == m.group(
         1
