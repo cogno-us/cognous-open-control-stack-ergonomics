@@ -17,4 +17,6 @@ uv pip compile pyproject.toml --extra dev   --universal --python-version 3.11 --
 uv pip compile pyproject.toml --extra stack --universal --python-version 3.11 --generate-hashes -o requirements/stack.txt
 ```
 
+`tests/test_distribution.py` builds the wheel and sdist, installs the wheel into a fresh venv with `--no-index` (the core package has no dependencies), and requires the `ocs` and `cognous-ocs` scripts to give identical output.
+
 Install from a lock with `pip install -r requirements/stack.txt`. CI still installs with `pip install -e ".[dev,stack]"`; the locks are the reproducible record, not yet the CI install path.

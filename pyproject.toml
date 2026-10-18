@@ -3,7 +3,7 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ocs"
+name = "cognous-ocs"
 version = "0.1.0"
 description = "Front door to the Cognous Open Control Stack: offline demo, evidence render, checks. It relays component verdicts and decides nothing."
 readme = "README.md"
@@ -48,8 +48,10 @@ dev = [
     "hatchling>=1.25",
 ]
 
+# The typed command stays `ocs`; `cognous-ocs` is an alias console script for the same entry point.
 [project.scripts]
 ocs = "ocs.cli:main"
+cognous-ocs = "ocs.cli:main"
 
 [tool.hatch.metadata]
 allow-direct-references = true
