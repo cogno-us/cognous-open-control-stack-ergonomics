@@ -25,7 +25,7 @@
     "run-record.json": {
       "component": "control_plane",
       "repository": "cogno-us/cognous-control-plane",
-      "commit": "83b49b5e61cdacee916b502cdea775aefc72a064",
+      "commit": "3cd17ead6b24301290ad1e50ae4b22bbd93c12fb",
       "path": "examples/sample_run_record.json",
       "sha256": "265833e08f3d02f504f06d9b148facb92fd87743c70634da9c59e0d47d501c45"
     },
@@ -58,7 +58,7 @@
     "now": "2026-10-05T19:00:00Z",
     "control_plane": {
       "repository": "cogno-us/cognous-control-plane",
-      "commit": "83b49b5e61cdacee916b502cdea775aefc72a064",
+      "commit": "3cd17ead6b24301290ad1e50ae4b22bbd93c12fb",
       "first_revision_with_acp_run": "83b49b5e61cdacee916b502cdea775aefc72a064",
       "pull_request": "cogno-us/cognous-control-plane#46"
     },
@@ -83,7 +83,7 @@
   },
   "control_plane_pin": {
     "hub_component_lock_commit": "d3dadee70bd319812b207389ab1e0f6efe511916",
-    "pinned_commit": "83b49b5e61cdacee916b502cdea775aefc72a064",
+    "pinned_commit": "3cd17ead6b24301290ad1e50ae4b22bbd93c12fb",
     "ahead_of_hub_lock": true,
     "reason": "acp run (cogno-us/cognous-control-plane#46) first exists at the pinned commit. The other three components stay at the hub lock."
   }

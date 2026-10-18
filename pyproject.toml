@@ -30,7 +30,7 @@ dependencies = []
 # index upload. Nothing is published from this repository.
 stack = [
     "agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@46c950bed37fe3812000895430bc0312d29e37ce",
-    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@83b49b5e61cdacee916b502cdea775aefc72a064",
+    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@3cd17ead6b24301290ad1e50ae4b22bbd93c12fb",
     "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@459e4ba62fca49364aebb0050cd5fb2dd5a71bfa",
     "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@b4baccd823d2a73be276c1de745b19cf7c56a0d6",
 ]
