@@ -8,14 +8,6 @@ import pytest
 from ocs.paths import PathRefused, check_input, confine_output, refuse_alias
 
 
-@pytest.fixture
-def ws(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    work = tmp_path / "ws"
-    work.mkdir()
-    monkeypatch.chdir(work)
-    return work
-
-
 def test_relative_output_inside_workspace(ws: Path) -> None:
     assert confine_output("out/x.html") == ws / "out" / "x.html"
 
