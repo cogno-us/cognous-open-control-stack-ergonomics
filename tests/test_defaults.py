@@ -55,4 +55,6 @@ def test_locked_packages_are_pinned_exactly_with_hashes(extra: str) -> None:
     assert pinned
     for entry in pinned:
         assert "--hash=sha256:" in entry, entry.splitlines()[0]
-    assert not re.search(r"^[A-Za-z0-9_.\-]+\s*(>=|<=|~=|>|<)", text, flags=re.M)
+    for line in text.splitlines():
+        if line and not line[0].isspace() and not line.startswith("#"):
+            assert "==" in line or " @ git+https://" in line, f"unpinned requirement: {line}"
