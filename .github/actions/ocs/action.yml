@@ -107,7 +107,7 @@ runs:
         OCS_UPLOAD_FULL: ${{ steps.confine.outputs.upload-full }}
       run: |
         set +e
-        bin="${OCS_ACTION_BIN:-ocs}"
+        bin="${OCS_ACTION_BIN:-cognous-ocs}"
         expected="$(tr -d '\r\n' < "$GITHUB_ACTION_PATH/release-version.txt")"
         args=(ci --out "$OCS_OUT_DIR" --report-mode "$OCS_REPORT_MODE" --expect-version "$expected")
         [ -n "$OCS_MANIFEST" ] && args+=(--manifest "$OCS_MANIFEST")
