@@ -6,7 +6,7 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import cli, demo, render
+from ocs import cli, demo, registry, render, validate
 from ocs.envelope import (
     INVALID,
     OCS_PATHS,
@@ -63,6 +63,10 @@ def demo_command(args: argparse.Namespace) -> cli.Outcome:
     )
 
 
+def validate_command(args: argparse.Namespace) -> cli.Outcome:
+    return validate.run_validate(args.path, args.kind)
+
+
 def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentParser) -> None:
     evidence = sub.add_parser("evidence", parents=[common], help="evidence pack views")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", parser_class=type(evidence))
@@ -75,7 +79,11 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     d.add_argument(
         "--clean", action="store_true", help="replace a directory a previous demo created"
     )
+    v = sub.add_parser("validate", parents=[common], help="check one artifact")
+    v.add_argument("path", help="artifact JSON")
+    v.add_argument("--kind", required=True, choices=registry.KINDS, help="what the artifact is")
     cli.HANDLERS["demo"] = demo_command
+    cli.HANDLERS["validate"] = validate_command
     cli.HANDLERS["evidence"] = _evidence_dispatch
 
 
