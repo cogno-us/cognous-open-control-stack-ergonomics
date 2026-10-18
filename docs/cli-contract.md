@@ -116,6 +116,8 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 - Each success states what it does not prove.
 - **Correction (Phase 2):** the registry lives in `src/ocs/registry.py` and is listed in `docs/validate.md`. A missing, non-string or ambiguous version member matches no pair. A file whose `artifact_kind` disagrees with `--kind` is refused. Duplicate JSON members, NaN/Infinity and non-UTF-8 are refused as `OCS_INPUT_INVALID`. Pins are checked only for the one component the pair needs.
 
+- **Correction (Phase 2):** `init` writes four files, not three: `workflow.json` names the manifest, policy and run record and carries the signing and redaction settings `doctor` reads. A differing managed file is reported as `OCS_PATHS` (the same code the demo uses for a refused output directory). `doctor` never writes, including `ci-diagnostics.json`, and a check that cannot run because an earlier one failed is SKIP. Details in `docs/init-doctor.md`.
+
 ## 8. Path and write confinement
 
 - Outputs must resolve inside the workspace or the runner temp directory. Symlink and hard-link aliasing is refused.

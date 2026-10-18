@@ -6,7 +6,7 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import cli, demo, registry, render, validate
+from ocs import cli, demo, doctor, registry, render, scaffold, validate
 from ocs.envelope import (
     INVALID,
     OCS_PATHS,
@@ -82,6 +82,13 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     v = sub.add_parser("validate", parents=[common], help="check one artifact")
     v.add_argument("path", help="artifact JSON")
     v.add_argument("--kind", required=True, choices=registry.KINDS, help="what the artifact is")
+    i = sub.add_parser("init", parents=[common], help="scaffold a starter workflow")
+    i.add_argument("what", choices=("workflow",))
+    i.add_argument("--out", required=True, help="directory to scaffold (created if missing)")
+    dr = sub.add_parser("doctor", parents=[common], help="read-only setup diagnosis")
+    dr.add_argument("--workflow", default=None, help="workflow directory made by ocs init")
+    cli.HANDLERS["init"] = lambda a: scaffold.run_init(a.out)
+    cli.HANDLERS["doctor"] = lambda a: doctor.run_doctor(a.workflow)
     cli.HANDLERS["demo"] = demo_command
     cli.HANDLERS["validate"] = validate_command
     cli.HANDLERS["evidence"] = _evidence_dispatch

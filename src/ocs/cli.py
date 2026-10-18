@@ -44,6 +44,7 @@ class Outcome:
 
     result: Result
     diagnostics_dir: Path | None = None
+    read_only: bool = False  # never write, not even ci-diagnostics.json (doctor)
 
 
 Handler = Callable[[argparse.Namespace], Outcome]
@@ -138,9 +139,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _finish(result, fmt, None)
     handler = HANDLERS[args.command]
     diag: Path | None = None
+    read_only = False
     try:
         outcome = handler(args)
-        result, diag = outcome.result, outcome.diagnostics_dir
+        result, diag, read_only = outcome.result, outcome.diagnostics_dir, outcome.read_only
     except UsageError as exc:
         result = Result(
             command=args.command,
@@ -159,13 +161,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             reason_codes=[OCS_INTERNAL],
             messages=[f"internal error ({type(exc).__name__})"],
         )
-    return _finish(result, fmt, diag)
+    return _finish(result, fmt, diag, read_only=read_only)
 
 
-def _finish(result: Result, fmt: str, diag: Path | None) -> int:
+def _finish(result: Result, fmt: str, diag: Path | None, *, read_only: bool = False) -> int:
     _emit(result, fmt)
     code = result.exit_code
-    if code != 0:
+    if code != 0 and not read_only:
         target = _diagnostics_dir(diag)
         if target is not None:
             with contextlib.suppress(OSError):
