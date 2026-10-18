@@ -12,14 +12,6 @@ from ocs import render
 from ocs.cli import main
 
 
-@pytest.fixture
-def ws(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    work = tmp_path / "ws"
-    work.mkdir()
-    monkeypatch.chdir(work)
-    return work
-
-
 def pack_dict() -> dict[str, Any]:
     data = json.loads(fx.read_fixture("evidence-pack.json"))
     assert isinstance(data, dict)

@@ -6,7 +6,7 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import cli, render
+from ocs import cli, demo, render
 from ocs.envelope import (
     INVALID,
     OCS_PATHS,
@@ -57,12 +57,25 @@ def evidence_render(args: argparse.Namespace) -> cli.Outcome:
     )
 
 
+def demo_command(args: argparse.Namespace) -> cli.Outcome:
+    return demo.run_demo(
+        args.out, clean=bool(args.clean), strict=bool(getattr(args, "strict", False))
+    )
+
+
 def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentParser) -> None:
     evidence = sub.add_parser("evidence", parents=[common], help="evidence pack views")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", parser_class=type(evidence))
     r = evidence_sub.add_parser("render", parents=[common], help="one self-contained HTML view")
     r.add_argument("path", help="evidence pack JSON")
     r.add_argument("--out", required=True, help="HTML file to write")
+    d = sub.add_parser("demo", parents=[common], help="run a bundled example offline")
+    d.add_argument("example", choices=("customer-service",))
+    d.add_argument("--out", required=True, help="directory to write (created or replaced)")
+    d.add_argument(
+        "--clean", action="store_true", help="replace a directory a previous demo created"
+    )
+    cli.HANDLERS["demo"] = demo_command
     cli.HANDLERS["evidence"] = _evidence_dispatch
 
 
