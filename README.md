@@ -6,8 +6,8 @@ This repository is the front door to the Open Control Stack: one command to inst
 
 ## Rules this repository holds itself to
 
-1. **One-way dependency.** It depends on the components only through their ODES contracts and public validators. No component depends on it.
-2. **Read-only toward the stack.** Its only write path is its own scaffold (`init`). A differing existing file stops it; nothing is overwritten.
+1. **One-way dependency.** It depends on the components only through their public CLI commands (`aam`, `acp`, `arb`, `agep`) at pinned commits, run in subprocesses. No component depends on it.
+2. **Read-only toward the stack.** It writes only to output paths the user names (`--out`), never to component files; `init` is the only command that scaffolds into a workflow directory. A differing existing file stops `init`; nothing is overwritten.
 3. **No verdict authority.** It relays component verdicts and invents none. No local waivers or exceptions.
 4. **Fails closed, runs offline.** An unknown or archival version is never a pass. Tests run with the network disabled.
 5. **Claims are checked by code.** The build fails if a document says certified, compliant or production-ready while publication or production is on HOLD.
