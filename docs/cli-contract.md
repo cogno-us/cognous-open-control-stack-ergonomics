@@ -87,7 +87,7 @@ On any nonzero exit, `ci-diagnostics.json`:
 }
 ```
 
-Written under the declared output directory only. Contains no artifact content, no secrets and no paths outside the workspace.
+Written under the declared output directory only. Contains no artifact content, no secrets and no paths outside the workspace; `report_paths` lists the report files written under the output directory.
 
 ## 6. Reason codes
 
@@ -115,7 +115,7 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 
 - The `--kind` argument and the parsed schema version choose the check. A missing `artifact_kind` inside the file cannot bypass it.
 - Every (kind, version) pair is registered as full semantic validation or archival-only. An unregistered pair fails closed (exit 2).
-- `validate` calls component validators through their ODES contracts. It does not import component internals.
+- `validate` runs the component's own public validator command in a subprocess. It does not import component internals.
 - Each success states what it does not prove.
 - **Correction (Phase 2):** the registry lives in `src/cognous_ocs/registry.py` and is listed in `docs/validate.md`. A missing, non-string or ambiguous version member matches no pair. A file whose `artifact_kind` disagrees with `--kind` is refused. Duplicate JSON members, NaN/Infinity and non-UTF-8 are refused as `OCS_INPUT_INVALID`. Pins are checked only for the one component the pair needs.
 
@@ -124,6 +124,8 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 ## 8. Path and write confinement
 
 - Outputs must resolve inside the workspace or the runner temp directory. Symlink and hard-link aliasing is refused.
+- A link already present at the `ci-diagnostics.json` name is replaced as a link; its target is never opened or written. On a passing run a link left at that name is removed (target untouched) and the run still exits 0. A linked output directory is refused.
+- Known limits, listed for the freeze review (no behaviour change here): (1) the evidence-pack copy that `ci` always makes still reads through a linked source file, because refusing would change the default for valid input; only its destination is written without following links. (2) The `--copy-inputs` source check covers the final path component and an earlier is-symlink check on the input itself; intermediate directories are not re-walked, and an explicit `--manifest` path still follows linked parent directories. (3) A regular (non-link) `ci-diagnostics.json` left by an earlier failed run survives a later passing run in the same output directory.
 - Input paths containing CR or LF are refused.
 - No input may alias an owned output.
 - `init` stops with exit 2 before replacing any differing file; rerunning with identical bytes changes nothing; a partial scaffold resumes by creating only missing files.

@@ -129,7 +129,10 @@ class Result:
         return "\n".join(lines) + "\n"
 
     def diagnostics(self) -> dict[str, Any]:
-        """The ci-diagnostics.json body: no artifact content, no paths, no secrets."""
+        """The ci-diagnostics.json body.
+
+        No artifact content, no paths outside the output directory, no secrets.
+        """
         return {
             "envelope_version": ENVELOPE_VERSION,
             "outcome": self.outcome,
