@@ -14,7 +14,7 @@ Scripts, CI jobs and people must be able to rely on what `cognous-ocs` returns w
 
 | Command | Purpose | Writes |
 |---|---|---|
-| `cognous-ocs --version` | Print CLI, distribution, contract and bundled-component versions (`cognous-ocs --version` is identical) | nothing |
+| `cognous-ocs --version` | Print CLI, distribution, contract and bundled-component versions | nothing |
 | `cognous-ocs demo customer-service --out DIR [--clean] [--strict]` | Run the bundled customer-service example offline; succeed only if the blocked email send is evidenced | `DIR` only |
 | `cognous-ocs validate PATH --kind KIND` | Check one artifact. Kinds: `manifest`, `run-record`, `replay-bundle`, `evidence-pack` | nothing |
 | `cognous-ocs init workflow --out DIR` | Scaffold a manifest, a policy file and a sample run record | `DIR` only |
@@ -109,7 +109,7 @@ Namespace `OCS_*`, stable once published; a code is never reused for a different
 | `OCS_DEMO_EXPECTATION` | A demo step returned an unexpected exit code or an expected artifact fact did not hold (**Correction:** added) |
 | `OCS_BLOCKING_FINDING` | A component recorded a blocking decision; propagated as exit 1 under `--strict` (**Correction:** added) |
 
-Component reason codes (for example the control plane's `runtime-authority-reasons/0.1` registry) are passed through unchanged in `verdict_source`, not remapped.
+Component reason codes (for example the control plane's `runtime-authority-reasons` registry, label 0.1 or 0.2 as the component emits it) are passed through unchanged in `verdict_source`, not remapped.
 
 ## 7. Validation discipline
 

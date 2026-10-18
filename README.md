@@ -1,6 +1,6 @@
 # Cognous Open Control Stack: Ergonomics
 
-Status: Phase 2 (validate, init, doctor, passthrough) on top of Phase 1 (skeleton, offline demo, evidence render). Nothing here changes any Open Control Stack component, and nothing is published from this repository.
+Status: Phases 1 to 3 are merged (offline demo and evidence render; validate, init, doctor, passthrough; composite action, schema snapshots, dashboard). Everything is `0.1.0-draft`. Nothing here changes any Open Control Stack component, and nothing is published from this repository.
 
 This repository is the front door to the Open Control Stack: one command to install, try, check and wire into CI. It does none of the governing. The components still make every authority decision, refusal, replay and evidence record. If this repository disappeared, the stack would behave exactly as before.
 
@@ -11,7 +11,7 @@ This repository is the front door to the Open Control Stack: one command to inst
 3. **No verdict authority.** It relays component verdicts and invents none. No local waivers or exceptions.
 4. **Fails closed, runs offline.** An unknown or archival version is never a pass. Tests run with the network disabled.
 5. **Claims are checked by code.** The build fails if a document says certified, compliant or production-ready while publication or production is on HOLD.
-6. **Narrow surface.** The four layers (manifest, replay, evidence, plus the control layer they report on) and `validate`, `demo`, `init`, `doctor`, `ci`. No studies, no live adapters.
+6. **Narrow surface.** Passthrough for three layers (manifest, replay, evidence; no control-plane layer) and `validate`, `demo`, `init`, `doctor`, `evidence render`, `dashboard`, `schema export`, `ci`. No studies, no live adapters.
 
 ## Naming
 
