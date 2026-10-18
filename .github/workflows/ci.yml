@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (components are pinned to the hub component-lock commits)
+      - name: Install (components pinned in ocs.lock; the control plane is pinned ahead of the hub lock)
         run: python -m pip install -e ".[dev,stack]"
       - name: make check (lint, types, lock, tests with sockets off, docs, claims, examples, build)
         run: make check

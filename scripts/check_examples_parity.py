@@ -19,6 +19,16 @@ import _repo  # noqa: E402
 
 EXAMPLE = "customer-service"
 EXPECTED = {"manifest.json", "run-record.json", "replay-bundle.json", "evidence-pack.json"}
+# Inputs of the demo's real control step; hashes live under provenance["acp_run"]["bundled"].
+ACP_RUN_DIR = "acp-run"
+ACP_RUN_EXPECTED = {
+    "manifest.json",
+    "authority-context.json",
+    "resolver-state.json",
+    "proposal-crm-read.json",
+    "proposal-notes-search.json",
+    "proposal-email-send.json",
+}
 
 
 def sha(path: Path) -> str:
@@ -40,6 +50,7 @@ def check(root: Path, source_dir: Path | None = None) -> list[str]:
     on_disk = {p.name for p in base.iterdir() if p.is_file()}
     if on_disk != EXPECTED | {"provenance.json"}:
         errors.append(f"fixture directory holds {sorted(on_disk)}")
+    errors += check_acp_run(base, prov)
     for name, digest in sorted(bundled.items()):
         if not (base / name).is_file():
             errors.append(f"{name}: missing")
@@ -52,6 +63,34 @@ def check(root: Path, source_dir: Path | None = None) -> list[str]:
             theirs = source_dir / name
             if not theirs.is_file() or sha(theirs) != bundled.get(name):
                 errors.append(f"{name}: differs from the source checkout")
+    return errors
+
+
+def check_acp_run(base: Path, prov: dict[str, object]) -> list[str]:
+    """The acp-run inputs: exactly the expected files, each at its recorded hash, none a byte copy."""
+    errors: list[str] = []
+    section = prov.get("acp_run")
+    if not isinstance(section, dict) or not isinstance(section.get("bundled"), dict):
+        return ["provenance.json has no acp_run.bundled section"]
+    bundled: dict[str, str] = section["bundled"]
+    if set(bundled) != ACP_RUN_EXPECTED:
+        errors.append(f"acp_run lists {sorted(bundled)}, expected {sorted(ACP_RUN_EXPECTED)}")
+    folder = base / ACP_RUN_DIR
+    held = {p.name for p in folder.iterdir()} if folder.is_dir() else set()
+    if held != ACP_RUN_EXPECTED:
+        errors.append(f"{ACP_RUN_DIR}/ holds {sorted(held)}")
+    for name, digest in sorted(bundled.items()):
+        if not (folder / name).is_file():
+            errors.append(f"{ACP_RUN_DIR}/{name}: missing")
+        elif sha(folder / name) != digest:
+            errors.append(f"{ACP_RUN_DIR}/{name}: bytes differ from the recorded hash")
+    modelled = section.get("modelled_on")
+    copies = set(bundled.values()) & set(modelled.values() if isinstance(modelled, dict) else ())
+    if copies or section.get("byte_equal_to_source") != []:
+        errors.append(f"{ACP_RUN_DIR}/: an input is a byte copy of a control-plane example")
+    pin = prov.get("control_plane_pin")
+    if not isinstance(pin, dict) or "hub_component_lock_commit" not in pin:
+        errors.append("provenance.json does not record the control-plane pin against the hub lock")
     return errors
 
 
