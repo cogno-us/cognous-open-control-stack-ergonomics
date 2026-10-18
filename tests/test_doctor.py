@@ -1,4 +1,4 @@
-"""`ocs doctor`: per-check results, the broken-scaffold acceptance case, and the read-only proof."""
+"""`cognous-ocs doctor`: per-check results, the broken-scaffold acceptance case, and the read-only proof."""
 
 from __future__ import annotations
 
@@ -13,9 +13,9 @@ from typing import Any
 
 import pytest
 
+from cognous_ocs import doctor, scaffold
+from cognous_ocs.cli import main
 from helpers import fake_bin, pinned
-from ocs import doctor, scaffold
-from ocs.cli import main
 
 
 def scaffolded(ws: Path, name: str = "w") -> Path:

@@ -1,6 +1,6 @@
-"""The (kind, version) registry behind `ocs validate` (cli-contract section 7).
+"""The (kind, version) registry behind `cognous-ocs validate` (cli-contract section 7).
 
-Every pair `ocs` will ever check is listed here, as `full` (a public component command performs
+Every pair `cognous-ocs` will ever check is listed here, as `full` (a public component command performs
 the semantic check) or `archival-only` (known, historical or unsupported by any public
 validator: never a pass). A pair that is not listed fails closed. The `--kind` argument and the
 version parsed from the file choose the entry; nothing inside the file can select a check.
@@ -38,7 +38,7 @@ class Entry:
     kind: str
     version: str
     mode: str  # FULL or ARCHIVAL_ONLY
-    command: str  # component command (key into ocs.lock.COMPONENTS)
+    command: str  # component command (key into cognous_ocs.lock.COMPONENTS)
     args: tuple[str, ...]  # public subcommand, then the path is appended
     note: str
 

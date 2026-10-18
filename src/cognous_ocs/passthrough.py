@@ -1,8 +1,8 @@
-"""`ocs manifest|replay|evidence ...`: thin wrappers over the component CLIs.
+"""`cognous-ocs manifest|replay|evidence ...`: thin wrappers over the component CLIs.
 
-`ocs manifest ARGS` runs `aam ARGS`, `ocs replay ARGS` runs `arb ARGS` and `ocs evidence ARGS`
-runs `agep ARGS` (except `ocs evidence render`, which is `ocs`'s own HTML view). Everything after
-the layer name belongs to the component, verbatim; `ocs` options (`--format`, `--strict`,
+`cognous-ocs manifest ARGS` runs `aam ARGS`, `cognous-ocs replay ARGS` runs `arb ARGS` and `cognous-ocs evidence ARGS`
+runs `agep ARGS` (except `cognous-ocs evidence render`, which is `cognous-ocs`'s own HTML view). Everything after
+the layer name belongs to the component, verbatim; `cognous-ocs` options (`--format`, `--strict`,
 `--no-color`) go before it. In text mode the component's output and exit code are relayed as
 they are. With `--format json` the run is wrapped in the standard envelope instead, and the
 component's exit code is mapped, not reinterpreted.
@@ -15,8 +15,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ocs.demo import ComponentProblem, installed_commit
-from ocs.envelope import (
+from cognous_ocs.demo import ComponentProblem, installed_commit
+from cognous_ocs.envelope import (
     ERROR,
     FAIL,
     INVALID,
@@ -30,8 +30,8 @@ from ocs.envelope import (
     Result,
     strip_controls,
 )
-from ocs.lock import COMPONENTS
-from ocs.runner import ComponentRunError, check_pins, run_component
+from cognous_ocs.lock import COMPONENTS
+from cognous_ocs.runner import ComponentRunError, check_pins, run_component
 
 LAYERS = {"manifest": "aam", "replay": "arb", "evidence": "agep"}
 FORMATS = ("text", "json")
@@ -39,7 +39,7 @@ TIMEOUT_SECONDS = 600.0
 OUTPUT_IN_RESULT = 4_000
 
 DOES_NOT_PROVE = [
-    "that ocs interpreted anything: the component's own command ran and its exit code is mapped",
+    "that cognous-ocs interpreted anything: the component's own command ran and its exit code is mapped",
     "external source linkage",
     "producer authenticity",
 ]
@@ -63,7 +63,7 @@ class Passthrough:
 
 
 def detect(argv: list[str]) -> Passthrough | None:
-    """Recognise `[ocs options] LAYER ARGS...` where LAYER is a passthrough layer."""
+    """Recognise `[cognous-ocs options] LAYER ARGS...` where LAYER is a passthrough layer."""
     i = 0
     fmt = "text"
     while i < len(argv):
@@ -82,7 +82,7 @@ def detect(argv: list[str]) -> Passthrough | None:
         return None
     layer, rest = argv[i], argv[i + 1 :]
     if layer == "evidence" and (not rest or rest[0].startswith("-") or rest[0] == "render"):
-        return None  # `ocs evidence render ...` and bare `ocs evidence` stay with ocs
+        return None  # `cognous-ocs evidence render ...` and bare `cognous-ocs evidence` stay with cognous-ocs
     return Passthrough(layer, LAYERS[layer], rest, fmt)
 
 

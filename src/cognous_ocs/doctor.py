@@ -1,9 +1,9 @@
-"""`ocs doctor [--workflow DIR]`: read-only setup diagnosis.
+"""`cognous-ocs doctor [--workflow DIR]`: read-only setup diagnosis.
 
 Strictly read-only: it never runs the agent or a component, never writes, and never touches the
 network. It reads files and the process environment and reports PASS, FAIL or SKIP per check,
 each with a stable code, a short message and one action. It validates nothing (that is
-`ocs validate`) and decides nothing about authority; it checks that the pieces a workflow needs
+`cognous-ocs validate`) and decides nothing about authority; it checks that the pieces a workflow needs
 are present, named consistently and confined to the workflow directory.
 """
 
@@ -16,18 +16,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ocs import registry
-from ocs.cli import Outcome
-from ocs.demo import ComponentProblem, installed_commit
-from ocs.envelope import (
+from cognous_ocs import registry
+from cognous_ocs.cli import Outcome
+from cognous_ocs.demo import ComponentProblem, installed_commit
+from cognous_ocs.envelope import (
     INVALID,
     PASS,
     Result,
 )
-from ocs.lock import COMPONENTS
-from ocs.runner import check_pins
-from ocs.scaffold import DEMO_ONLY, REDACTION_PROFILES, SECRET_ENV, WORKFLOW_FILE
-from ocs.validate import load_document
+from cognous_ocs.lock import COMPONENTS
+from cognous_ocs.runner import check_pins
+from cognous_ocs.scaffold import DEMO_ONLY, REDACTION_PROFILES, SECRET_ENV, WORKFLOW_FILE
+from cognous_ocs.validate import load_document
 
 OK = "PASS"
 FAILED = "FAIL"
@@ -45,7 +45,7 @@ ENV_NAME = re.compile(r"^[A-Z_][A-Z0-9_]{0,63}$")
 NO_AUTHORITY_NEEDED = frozenset({"read"})
 
 DOES_NOT_PROVE = [
-    "that any artifact validates: doctor reads files and runs no validator (use ocs validate)",
+    "that any artifact validates: doctor reads files and runs no validator (use cognous-ocs validate)",
     "that the workflow is correct, safe or authorised to run",
     "producer authenticity or external source linkage",
 ]
@@ -136,9 +136,7 @@ def check_version(bin_dir: Path | None, commit_of: Callable[[str], str | None]) 
 
 
 def check_paths(wf: Workflow) -> Check:
-    action = (
-        f"run: ocs init workflow --out {wf.base} (on an empty directory), or fix {WORKFLOW_FILE}"
-    )
+    action = f"run: cognous-ocs init workflow --out {wf.base} (on an empty directory), or fix {WORKFLOW_FILE}"
     if wf.settings is None:
         return Check("OCS_PATHS", FAILED, f"{WORKFLOW_FILE} is missing or not strict JSON", action)
     problems: list[str] = []
@@ -186,7 +184,7 @@ def _action_problems(doc: dict[str, Any]) -> list[str]:
 
 
 def check_manifest(wf: Workflow) -> Check:
-    action = "run: ocs validate MANIFEST --kind manifest, then add the missing declarations"
+    action = "run: cognous-ocs validate MANIFEST --kind manifest, then add the missing declarations"
     if wf.manifest_path is None:
         return _skip(
             "OCS_MANIFEST", "the manifest path was refused (see OCS_PATHS)", "fix OCS_PATHS first"
@@ -322,7 +320,10 @@ def check_redaction(wf: Workflow) -> Check:
         return Check("OCS_REDACTION", FAILED, "no redaction profile is named", action)
     if profile not in REDACTION_PROFILES:
         return Check(
-            "OCS_REDACTION", FAILED, "the named redaction profile is not one ocs can load", action
+            "OCS_REDACTION",
+            FAILED,
+            "the named redaction profile is not one cognous-ocs can load",
+            action,
         )
     return Check("OCS_REDACTION", OK, f"redaction profile '{profile}' is named and loadable")
 
@@ -343,7 +344,7 @@ def run_checks(
             "OCS_PATHS",
             FAILED,
             "the workflow path is not a readable directory (or contains CR, LF or NUL)",
-            "run: ocs init workflow --out DIR, then ocs doctor --workflow DIR",
+            "run: cognous-ocs init workflow --out DIR, then cognous-ocs doctor --workflow DIR",
         )
         rest = [
             _skip(c, "the workflow directory was refused (see OCS_PATHS)", "fix OCS_PATHS first")

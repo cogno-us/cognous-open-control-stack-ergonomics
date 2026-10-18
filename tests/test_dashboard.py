@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
-from ocs import dashboard
-from ocs import fixtures_data as fx
-from ocs.cli import main
+from cognous_ocs import dashboard
+from cognous_ocs import fixtures_data as fx
+from cognous_ocs.cli import main
 
 H = "sha256:" + "ab" * 32
 H2 = "sha256:" + "cd" * 32

@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from ocs.lock import COMPONENTS
+from cognous_ocs.lock import COMPONENTS
 
 ROOT = Path(__file__).resolve().parents[1]
 

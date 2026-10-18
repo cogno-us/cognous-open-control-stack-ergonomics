@@ -1,4 +1,4 @@
-"""`ocs init workflow`: idempotent, resumable, never replaces a differing file."""
+"""`cognous-ocs init workflow`: idempotent, resumable, never replaces a differing file."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from ocs import scaffold
-from ocs.cli import main
+from cognous_ocs import scaffold
+from cognous_ocs.cli import main
 
 
 def snapshot(directory: Path) -> dict[str, tuple[bytes, int, int]]:

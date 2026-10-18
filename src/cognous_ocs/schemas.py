@@ -1,8 +1,8 @@
-"""`ocs schema export --out DIR`: the schema snapshots bundled with this release.
+"""`cognous-ocs schema export --out DIR`: the schema snapshots bundled with this release.
 
-The snapshots describe what `ocs` itself emits (the result envelope and the diagnostics file),
+The snapshots describe what `cognous-ocs` itself emits (the result envelope and the diagnostics file),
 nothing the components own. They live in `schemas/vN/` in the repository, ship in the wheel as
-`ocs/schema_resources/`, and are listed with their sha256 in `SNAPSHOTS.json`. Export verifies
+`cognous_ocs/schema_resources/`, and are listed with their sha256 in `SNAPSHOTS.json`. Export verifies
 every bundled file against that manifest first, so a damaged copy is never written out, and it
 never replaces a differing file.
 """
@@ -16,7 +16,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-from ocs.envelope import (
+from cognous_ocs.envelope import (
     ERROR,
     INVALID,
     OCS_INTERNAL,
@@ -24,7 +24,7 @@ from ocs.envelope import (
     PASS,
     Result,
 )
-from ocs.paths import PathRefused, confine_output
+from cognous_ocs.paths import PathRefused, confine_output
 
 MANIFEST_NAME = "SNAPSHOTS.json"
 MANIFEST_SCHEMA = "ocs-schema-snapshots/1"
@@ -41,7 +41,7 @@ class SnapshotError(Exception):
 
 
 def _resource_root() -> Any:
-    bundled = files("ocs").joinpath("schema_resources")
+    bundled = files("cognous_ocs").joinpath("schema_resources")
     if bundled.is_dir():
         return bundled
     # Running from a source checkout: the snapshots live next to src/.

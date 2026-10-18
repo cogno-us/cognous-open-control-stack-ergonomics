@@ -1,4 +1,4 @@
-"""Lock freshness: the `stack` extra pins equal ocs.lock, and any *.lock files agree.
+"""Lock freshness: the `stack` extra pins equal cognous_ocs.lock, and any *.lock files agree.
 
 The pins are the hub component-lock commits, except the control plane, which is ahead of
 the hub lock (see provenance.json and docs/demo.md). A stale or edited pin
@@ -46,7 +46,7 @@ def check_requirement_locks(root: Path, extras: dict[str, list[str]]) -> list[st
 
 def check(root: Path) -> list[str]:
     sys.path.insert(0, str(root / "src"))
-    from ocs.lock import COMPONENTS
+    from cognous_ocs.lock import COMPONENTS
 
     errors: list[str] = []
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]
@@ -60,7 +60,7 @@ def check(root: Path) -> list[str]:
         errors.append(f"stack extra distributions {sorted(have)} != lock {sorted(want)}")
     for dist, line in want.items():
         if have.get(dist) != line:
-            errors.append(f"stack pin for {dist} differs from ocs.lock")
+            errors.append(f"stack pin for {dist} differs from cognous_ocs.lock")
     for lock in sorted(root.glob("requirements*.lock")):
         text = lock.read_text(encoding="utf-8")
         errors += [

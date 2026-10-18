@@ -9,11 +9,11 @@ from pathlib import Path
 
 import pytest
 
+from cognous_ocs import fixtures_data as fx
+from cognous_ocs import passthrough
+from cognous_ocs.cli import main
+from cognous_ocs.lock import COMPONENTS
 from helpers import fake_bin, pinned
-from ocs import fixtures_data as fx
-from ocs import passthrough
-from ocs.cli import main
-from ocs.lock import COMPONENTS
 
 ECHO = '#!/bin/sh\necho "out: $@"\necho "err: $@" >&2\nexit {code}\n'
 
@@ -227,7 +227,7 @@ def test_evidence_render_is_still_ocs_own(ws: Path, capsys: pytest.CaptureFixtur
 
 
 def test_layers_are_listed_in_help() -> None:
-    from ocs.cli import build_parser
+    from cognous_ocs.cli import build_parser
 
     text = build_parser().format_help()
     for layer in ("manifest", "replay", "evidence"):

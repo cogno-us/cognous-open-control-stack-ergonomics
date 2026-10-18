@@ -1,9 +1,9 @@
-"""The component pins `ocs` was built against.
+"""The component pins `cognous-ocs` was built against.
 
 These mirror the entries in the hub's component-lock.json at the hub commit recorded in
 fixtures/customer-service/provenance.json, except the control plane: it is pinned to the first
 revision with `acp run` (83b49b5e), which is ahead of the hub lock (docs/demo.md and
-provenance.json record both). `ocs` calls each component only through its public command; it
+provenance.json record both). `cognous-ocs` calls each component only through its public command; it
 never imports component internals.
 """
 

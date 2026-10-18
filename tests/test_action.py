@@ -14,9 +14,9 @@ from typing import Any
 import pytest
 import yaml
 
+from cognous_ocs import __version__
+from cognous_ocs.paths import PathRefused, confine_output
 from conftest import REPO_ROOT, load_script
-from ocs import __version__
-from ocs.paths import PathRefused, confine_output
 
 ACTION = REPO_ROOT / ".github" / "actions" / "ocs"
 check_action = load_script("check_action")
@@ -211,7 +211,7 @@ def test_helper_and_ocs_paths_agree_on_the_same_cases(
         mine = True
     except helper.Refused:
         mine = False
-    # ocs.paths also allows the system temp dir; the helper is stricter by design (workspace and
+    # cognous_ocs.paths also allows the system temp dir; the helper is stricter by design (workspace and
     # runner temp only), so it may refuse more, never less.
     assert mine <= theirs
 
@@ -267,7 +267,7 @@ def test_main_refusal_exits_2_never_echoes_the_input_and_leaves_diagnostics(
     code, err, output = run_main(space, tmp_path, retention_days="1\n::error::pwned")
     assert code == 2
     assert "pwned" not in err
-    assert err.startswith("::error title=ocs action::")
+    assert err.startswith("::error title=cognous-ocs action::")
     assert err.count("\n") == 1
     assert not output.exists()
     diag = json.loads((space[0] / "ocs-out" / "ci-diagnostics.json").read_text())
@@ -320,7 +320,7 @@ def glue(tmp_path: Path, ws: Path) -> dict[str, str]:
         "OCS_EVIDENCE_PACK": "sample/evidence/evidence-pack.json",
         "OCS_NON_ASSURANCE": "false",
         "OCS_STRICT": "false",
-        "OCS_ACTION_BIN": str(Path(sys.executable).parent / "ocs"),
+        "OCS_ACTION_BIN": str(Path(sys.executable).parent / "cognous-ocs"),
     }
 
 
@@ -334,7 +334,7 @@ def test_run_step_passes_with_the_real_stack_and_appends_the_summary(
     done = run_step("run", glue)
     assert done.returncode == 0, done.stdout + done.stderr
     assert outputs(glue)["exit-code"] == "0"
-    assert "## ocs ci" in Path(glue["GITHUB_STEP_SUMMARY"]).read_text()
+    assert "## cognous-ocs ci" in Path(glue["GITHUB_STEP_SUMMARY"]).read_text()
     assert (Path(glue["OCS_OUT_DIR"]) / "evidence" / "evidence-pack.json").is_file()
     assert not (Path(glue["OCS_OUT_DIR"]) / "inputs").exists()
 

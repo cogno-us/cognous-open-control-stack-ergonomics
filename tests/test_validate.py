@@ -1,4 +1,4 @@
-"""`ocs validate`: registry behaviour, exit mapping (fake components), real pinned components."""
+"""`cognous-ocs validate`: registry behaviour, exit mapping (fake components), real pinned components."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ from typing import Any
 
 import pytest
 
-from ocs import fixtures_data as fx
-from ocs import registry
-from ocs.cli import main
-from ocs.lock import COMPONENTS
-from ocs.validate import run_validate
+from cognous_ocs import fixtures_data as fx
+from cognous_ocs import registry
+from cognous_ocs.cli import main
+from cognous_ocs.lock import COMPONENTS
+from cognous_ocs.validate import run_validate
 
 KIND_FILE = {
     "manifest": "manifest.json",
@@ -308,7 +308,7 @@ def test_real_replay_bundle_corruption_exits_2(ws: Path) -> None:
 @pytest.mark.integration
 @pytest.mark.usefixtures("stack")
 def test_real_component_validator_is_version_blind_so_the_registry_matters(ws: Path) -> None:
-    """arb validate accepts any bundle_version string; ocs refuses unknown ones first."""
+    """arb validate accepts any bundle_version string; cognous-ocs refuses unknown ones first."""
     import subprocess
     import sys
 

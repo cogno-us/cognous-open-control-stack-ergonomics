@@ -1,4 +1,4 @@
-"""`ocs ci`: fail-closed profile, version binding, confinement, gating, reports, diagnostics."""
+"""`cognous-ocs ci`: fail-closed profile, version binding, confinement, gating, reports, diagnostics."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from typing import Any
 import pytest
 from jsonschema import Draft202012Validator
 
-from ocs import __version__, ci, fixtures_data, validate
-from ocs.cli import Outcome, main
-from ocs.doctor import FAILED, OK, Check
-from ocs.envelope import Result
+from cognous_ocs import __version__, ci, fixtures_data, validate
+from cognous_ocs.cli import Outcome, main
+from cognous_ocs.doctor import FAILED, OK, Check
+from cognous_ocs.envelope import Result
 
 SRC = {"component": "action-manifest", "contract": "action-manifest", "contract_version": "1.0.0"}
 SRC_PACK = {
@@ -34,7 +34,7 @@ def run(argv: list[str]) -> tuple[int, dict[str, Any]]:
 
 @pytest.fixture
 def work(ws: Path) -> Path:
-    from ocs import scaffold
+    from cognous_ocs import scaffold
 
     wf = ws / "wf"
     wf.mkdir()

@@ -1,8 +1,8 @@
-"""`ocs init workflow --out DIR`: a small, synthetic, idempotent workflow scaffold.
+"""`cognous-ocs init workflow --out DIR`: a small, synthetic, idempotent workflow scaffold.
 
 Four managed files: the action manifest, a policy file (the control plane's frame lists), a
 sample run record, and `workflow.json`, which names the other three and the signing and
-redaction settings `ocs doctor` reads. All content is synthetic. Writing follows one rule:
+redaction settings `cognous-ocs doctor` reads. All content is synthetic. Writing follows one rule:
 nothing that already differs is ever replaced.
 """
 
@@ -15,9 +15,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ocs.cli import Outcome
-from ocs.envelope import ERROR, INVALID, OCS_INTERNAL, OCS_PATHS, PASS, Result
-from ocs.paths import PathRefused, confine_output
+from cognous_ocs.cli import Outcome
+from cognous_ocs.envelope import ERROR, INVALID, OCS_INTERNAL, OCS_PATHS, PASS, Result
+from cognous_ocs.paths import PathRefused, confine_output
 
 WORKFLOW_FILE = "workflow.json"
 MANIFEST_FILE = "manifest.json"
@@ -25,7 +25,7 @@ POLICY_FILE = "policy.json"
 RUN_RECORD_FILE = "run-record.json"
 MANAGED = (MANIFEST_FILE, POLICY_FILE, RUN_RECORD_FILE, WORKFLOW_FILE)
 
-# Redaction profiles `ocs` knows by name, and the arb redact flags each stands for.
+# Redaction profiles `cognous-ocs` knows by name, and the arb redact flags each stands for.
 REDACTION_PROFILES: dict[str, tuple[str, ...]] = {
     "targets": ("--targets",),
     "targets-and-output": ("--targets", "--final-output"),
@@ -129,7 +129,10 @@ def _manifest() -> dict[str, Any]:
                 "metadata": {},
             },
         ],
-        "metadata": {"synthetic": True, "note": "Starter file written by ocs init workflow."},
+        "metadata": {
+            "synthetic": True,
+            "note": "Starter file written by cognous-ocs init workflow.",
+        },
     }
 
 
@@ -368,7 +371,7 @@ def run_init(out_raw: str) -> Outcome:
     messages = [
         f"created: {', '.join(written) or 'none'}",
         f"unchanged: {', '.join(planned.unchanged) or 'none'}",
-        "next: ocs doctor --workflow " + out_raw,
+        "next: cognous-ocs doctor --workflow " + out_raw,
     ]
     return Outcome(
         Result(

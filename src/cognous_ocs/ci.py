@@ -1,14 +1,14 @@
-"""`ocs ci`: the entry the composite action calls. Validate, gate, write reports and diagnostics.
+"""`cognous-ocs ci`: the entry the composite action calls. Validate, gate, write reports and diagnostics.
 
-It decides nothing. Every check is a component verdict relayed through `ocs validate` (or the
-read-only `ocs doctor` consistency checks), and the overall outcome is the worst step outcome.
+It decides nothing. Every check is a component verdict relayed through `cognous-ocs validate` (or the
+read-only `cognous-ocs doctor` consistency checks), and the overall outcome is the worst step outcome.
 
 Fail-closed profile: it refuses to run unless exactly one of a strict evidence input
 (`--evidence-pack`) or the explicit non-assurance mode (`--non-assurance`) is chosen. In
 non-assurance mode no evidence pack is checked, so even when every step passes the outcome is
 `review`, never `pass`.
 
-Version binding: with `--expect-version V` the installed `ocs` must report exactly V, else exit 2
+Version binding: with `--expect-version V` the installed `cognous-ocs` must report exactly V, else exit 2
 (`OCS_VERSION`) before anything else runs.
 
 Output: everything goes under `--out` (inside the workspace or temp directory, no symlinks). An
@@ -24,10 +24,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ocs import __version__, validate
-from ocs.cli import Outcome
-from ocs.doctor import FAILED, _confined, _read, run_checks
-from ocs.envelope import (
+from cognous_ocs import __version__, validate
+from cognous_ocs.cli import Outcome
+from cognous_ocs.doctor import FAILED, _confined, _read, run_checks
+from cognous_ocs.envelope import (
     ERROR,
     FAIL,
     INVALID,
@@ -39,8 +39,8 @@ from ocs.envelope import (
     Result,
     strip_controls,
 )
-from ocs.paths import PathRefused, check_input, confine_output
-from ocs.scaffold import WORKFLOW_FILE
+from cognous_ocs.paths import PathRefused, check_input, confine_output
+from cognous_ocs.scaffold import WORKFLOW_FILE
 
 REPORT_MODES = ("full", "fail-fast")
 SUMMARY_JSON = "ci-summary.json"
@@ -180,7 +180,7 @@ def _summary_md(result: Result, steps: list[Step], shown: dict[int, str | None])
         return SAFE_TEXT.sub("?", strip_controls(text))
 
     lines = [
-        "## ocs ci",
+        "## cognous-ocs ci",
         "",
         f"Outcome: **{result.outcome}** (exit {result.exit_code}). "
         f"Reason codes: {clean(', '.join(result.reason_codes) or 'none')}.",
@@ -222,13 +222,15 @@ def run_ci(
                 INVALID,
                 [OCS_PATHS],
                 subject,
-                messages=["the output directory exists and holds files ocs ci does not own"],
+                messages=[
+                    "the output directory exists and holds files cognous-ocs ci does not own"
+                ],
             )
         )
     if expect_version is not None and expect_version != __version__:
         return _refuse(
             OCS_VERSION,
-            f"installed ocs {__version__} is not the version this was released with "
+            f"installed cognous-ocs {__version__} is not the version this was released with "
             f"({strip_controls(expect_version)[:40]})",
             out,
             subject,

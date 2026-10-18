@@ -1,7 +1,7 @@
 # Dashboard: what it shows and what it does not prove
 
 ```
-ocs dashboard --out FILE INPUT [INPUT ...]
+cognous-ocs dashboard --out FILE INPUT [INPUT ...]
 ```
 
 Reads any mix of the inputs below and writes one self-contained HTML file. It is read-only: it runs no component, validates nothing against a contract and adds no verdict of its own. It needs at least one input.
@@ -10,7 +10,7 @@ Reads any mix of the inputs below and writes one self-contained HTML file. It is
 
 ![phone view](dashboard-sample/dashboard-phone.png)
 
-The pictures come from the files in [`dashboard-sample/`](dashboard-sample): `sample-trace.json` (a hand-written synthetic verification report from the ODES contract fixtures), `sample-mutation.json` (the real mutation report of the verifier harness at frozen revision `87425c39`, with the per-scenario tables dropped to keep the file small and one local path in an extension shortened to `cognous-verify`), `sample-pack.json` (the bundled synthetic evidence pack) and two real `bounded-run-record.json` files from an `acp run` demo. Reproduce with `ocs dashboard --out view.html docs/dashboard-sample/sample-*.json`.
+The pictures come from the files in [`dashboard-sample/`](dashboard-sample): `sample-trace.json` (a hand-written synthetic verification report from the ODES contract fixtures), `sample-mutation.json` (the real mutation report of the verifier harness at frozen revision `87425c39`, with the per-scenario tables dropped to keep the file small and one local path in an extension shortened to `cognous-verify`), `sample-pack.json` (the bundled synthetic evidence pack) and two real `bounded-run-record.json` files from an `acp run` demo. Reproduce with `cognous-ocs dashboard --out view.html docs/dashboard-sample/sample-*.json`.
 
 ## Inputs
 
@@ -48,7 +48,7 @@ Limits: 40 MB per file, 50 inputs, 400 events per run record, 5000 rows per list
 The page repeats this list.
 
 - That any input is true. It shows what each file says and recomputes only the arithmetic inside it.
-- That any input conforms to its contract. Run `ocs validate` or the contract validator for that.
+- That any input conforms to its contract. Run `cognous-ocs validate` or the contract validator for that.
 - That any digest matches a real file. Digests are shown as recorded, not recomputed.
 - Anything about records no input carries. A missing panel means no input supplied it.
 - That a verifier is correct, independent or exhaustive. Mutation figures describe a synthetic corpus at a pinned revision and say nothing about other corpora or revisions.

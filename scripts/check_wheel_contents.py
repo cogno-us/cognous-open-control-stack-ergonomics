@@ -10,32 +10,32 @@ import zipfile
 from pathlib import Path
 
 REQUIRED = [
-    "ocs/__init__.py",
-    "ocs/py.typed",
-    "ocs/cli.py",
-    "ocs/fixtures/customer-service/manifest.json",
-    "ocs/fixtures/customer-service/run-record.json",
-    "ocs/fixtures/customer-service/replay-bundle.json",
-    "ocs/fixtures/customer-service/evidence-pack.json",
-    "ocs/fixtures/customer-service/provenance.json",
-    "ocs/fixtures/customer-service/acp-run/manifest.json",
-    "ocs/fixtures/customer-service/acp-run/authority-context.json",
-    "ocs/fixtures/customer-service/acp-run/resolver-state.json",
-    "ocs/fixtures/customer-service/acp-run/proposal-crm-read.json",
-    "ocs/fixtures/customer-service/acp-run/proposal-notes-search.json",
-    "ocs/fixtures/customer-service/acp-run/proposal-email-send.json",
-    "ocs/schema_resources/SNAPSHOTS.json",
-    "ocs/schema_resources/v1/envelope.schema.json",
-    "ocs/schema_resources/v1/diagnostics.schema.json",
+    "cognous_ocs/__init__.py",
+    "cognous_ocs/py.typed",
+    "cognous_ocs/cli.py",
+    "cognous_ocs/fixtures/customer-service/manifest.json",
+    "cognous_ocs/fixtures/customer-service/run-record.json",
+    "cognous_ocs/fixtures/customer-service/replay-bundle.json",
+    "cognous_ocs/fixtures/customer-service/evidence-pack.json",
+    "cognous_ocs/fixtures/customer-service/provenance.json",
+    "cognous_ocs/fixtures/customer-service/acp-run/manifest.json",
+    "cognous_ocs/fixtures/customer-service/acp-run/authority-context.json",
+    "cognous_ocs/fixtures/customer-service/acp-run/resolver-state.json",
+    "cognous_ocs/fixtures/customer-service/acp-run/proposal-crm-read.json",
+    "cognous_ocs/fixtures/customer-service/acp-run/proposal-notes-search.json",
+    "cognous_ocs/fixtures/customer-service/acp-run/proposal-email-send.json",
+    "cognous_ocs/schema_resources/SNAPSHOTS.json",
+    "cognous_ocs/schema_resources/v1/envelope.schema.json",
+    "cognous_ocs/schema_resources/v1/diagnostics.schema.json",
 ]
-REQUIRED_PREFIXES = ["ocs/schema_resources/v1/"]
+REQUIRED_PREFIXES = ["cognous_ocs/schema_resources/v1/"]
 FORBIDDEN_PREFIXES = (
     "tests/",
     "scripts/",
     ".github/",
     ".githooks/",
     "schemas/",
-    "ocs/schema_resources/unreleased/",
+    "cognous_ocs/schema_resources/unreleased/",
 )
 FORBIDDEN_NAMES = {"release-state.json", "Makefile", ".coverage"}
 
@@ -62,9 +62,10 @@ def check(wheel: Path) -> list[str]:
             errors.append("LICENSE missing from dist-info")
         entry = next((n for n in names if n.endswith(".dist-info/entry_points.txt")), None)
         scripts = zf.read(entry).decode() if entry is not None else ""
-        for line in ("ocs = ocs.cli:main", "cognous-ocs = ocs.cli:main"):
-            if line not in scripts.splitlines():
-                errors.append(f"console script `{line}` missing")
+        if "cognous-ocs = cognous_ocs.cli:main" not in scripts.splitlines():
+            errors.append("console script `cognous-ocs = cognous_ocs.cli:main` missing")
+        if any(line.split("=")[0].strip() == "ocs" for line in scripts.splitlines()):
+            errors.append("an `ocs` console script must not ship (the only command is cognous-ocs)")
         if not any(n.split("/")[0].startswith("cognous_ocs-") for n in names):
             errors.append("dist-info is not named for the distribution `cognous-ocs`")
         meta = next((n for n in names if n.endswith(".dist-info/METADATA")), None)

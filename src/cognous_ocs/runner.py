@@ -1,6 +1,6 @@
 """Running component commands: pin checks and a minimal, offline subprocess wrapper.
 
-`ocs` talks to each component only through its public command, never by importing it. These
+`cognous-ocs` talks to each component only through its public command, never by importing it. These
 helpers are shared by every command that calls a component other than the demo (which keeps its
 own, older copy of the same logic).
 """
@@ -14,9 +14,9 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ocs.demo import ComponentProblem, installed_commit
-from ocs.envelope import strip_controls
-from ocs.lock import COMPONENTS
+from cognous_ocs.demo import ComponentProblem, installed_commit
+from cognous_ocs.envelope import strip_controls
+from cognous_ocs.lock import COMPONENTS
 
 OUTPUT_LIMIT = 20_000
 DEFAULT_TIMEOUT_SECONDS = 60.0

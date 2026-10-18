@@ -11,11 +11,11 @@ from typing import Any
 
 import pytest
 
-from ocs import demo
-from ocs import fixtures_data as fx
-from ocs.cli import main
-from ocs.envelope import FAIL, INVALID
-from ocs.lock import COMPONENTS
+from cognous_ocs import demo
+from cognous_ocs import fixtures_data as fx
+from cognous_ocs.cli import main
+from cognous_ocs.envelope import FAIL, INVALID
+from cognous_ocs.lock import COMPONENTS
 
 
 def fake_bin(root: Path, bodies: dict[str, str] | None = None) -> Path:
@@ -56,7 +56,7 @@ def test_resolve_refuses_wrong_or_unknown_commit(tmp_path: Path) -> None:
     with pytest.raises(demo.ComponentProblem) as info:
         demo.resolve_components(directory, wrong)
     text = str(info.value)
-    assert "unknown source" in text and "expected" in text and "ocs[stack]" in text
+    assert "unknown source" in text and "expected" in text and "cognous-ocs[stack]" in text
 
 
 def test_installed_commit_reads_pep610(monkeypatch: pytest.MonkeyPatch) -> None:

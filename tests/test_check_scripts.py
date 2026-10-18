@@ -16,7 +16,7 @@ lock = load_script("check_lock_freshness")
 wheel = load_script("check_wheel_contents")
 authz = load_script("check_release_authorization")
 
-FIX = "src/ocs/fixtures/customer-service"
+FIX = "src/cognous_ocs/fixtures/customer-service"
 
 
 def test_repository_passes_all_static_checks() -> None:
@@ -54,7 +54,9 @@ def test_unlinked_doc_page_is_found(repo_copy: Path) -> None:
 
 def test_unlisted_command_is_found(repo_copy: Path) -> None:
     contract = repo_copy / "docs" / "cli-contract.md"
-    lines = [x for x in contract.read_text().splitlines() if not x.startswith("| `ocs demo ")]
+    lines = [
+        x for x in contract.read_text().splitlines() if not x.startswith("| `cognous-ocs demo ")
+    ]
     contract.write_text("\n".join(lines) + "\n")
     assert any("registered command 'demo'" in e for e in docs.run(repo_copy))
 
@@ -115,7 +117,7 @@ def test_byte_equal_claim_must_match_recorded_source(repo_copy: Path) -> None:
 
 
 def test_stale_pin_fails_lock_freshness(repo_copy: Path) -> None:
-    from ocs.lock import COMPONENTS
+    from cognous_ocs.lock import COMPONENTS
 
     sha = COMPONENTS["aam"].sha
     pyproject = repo_copy / "pyproject.toml"
@@ -135,12 +137,12 @@ def make_wheel(path: Path, extra: dict[str, str] | None = None, drop: str | None
     members = {name: "x" for name in wheel.REQUIRED}
     members["cognous_ocs-0.dist-info/licenses/LICENSE"] = "x"
     members["cognous_ocs-0.dist-info/entry_points.txt"] = (
-        "[console_scripts]\nocs = ocs.cli:main\ncognous-ocs = ocs.cli:main\n"
+        "[console_scripts]\ncognous-ocs = cognous_ocs.cli:main\n"
     )
     members["cognous_ocs-0.dist-info/METADATA"] = (
         "Name: cognous-ocs\nProvides-Extra: stack\nRequires-Dist: agent-x; extra == 'stack'\n"
     )
-    members["ocs/schema_resources/v1/envelope.schema.json"] = "{}"
+    members["cognous_ocs/schema_resources/v1/envelope.schema.json"] = "{}"
     members.update(extra or {})
     with zipfile.ZipFile(path, "w") as zf:
         for name, body in members.items():
@@ -156,11 +158,15 @@ def test_good_wheel_passes(tmp_path: Path) -> None:
 def test_wheel_missing_required_and_with_forbidden_members_fails(tmp_path: Path) -> None:
     bad = make_wheel(
         tmp_path / "a.whl",
-        extra={"tests/test_x.py": "x", "release-state.json": "{}", "ocs/__pycache__/a.pyc": "x"},
-        drop="ocs/py.typed",
+        extra={
+            "tests/test_x.py": "x",
+            "release-state.json": "{}",
+            "cognous_ocs/__pycache__/a.pyc": "x",
+        },
+        drop="cognous_ocs/py.typed",
     )
     errors = wheel.check(bad)
-    assert any("missing from wheel: ocs/py.typed" in e for e in errors)
+    assert any("missing from wheel: cognous_ocs/py.typed" in e for e in errors)
     assert any("must not ship: tests/test_x.py" in e for e in errors)
     assert any("must not ship: release-state.json" in e for e in errors)
     assert any("bytecode" in e for e in errors)
@@ -244,26 +250,26 @@ def test_makefile_order_and_no_publish_command() -> None:
     ]
 
 
-def test_wheel_without_the_alias_script_fails(tmp_path: Path) -> None:
+def test_wheel_without_the_cognous_ocs_script_fails(tmp_path: Path) -> None:
     bad = make_wheel(
         tmp_path / "a.whl",
         extra={
-            "cognous_ocs-0.dist-info/entry_points.txt": "[console_scripts]\nocs = ocs.cli:main\n"
+            "cognous_ocs-0.dist-info/entry_points.txt": "[console_scripts]\nocs = cognous_ocs.cli:main\n"
         },
     )
-    assert any("`cognous-ocs = ocs.cli:main` missing" in e for e in wheel.check(bad))
+    assert any("`cognous-ocs = cognous_ocs.cli:main` missing" in e for e in wheel.check(bad))
 
 
-def test_wheel_without_the_ocs_script_fails(tmp_path: Path) -> None:
+def test_wheel_shipping_an_ocs_script_fails(tmp_path: Path) -> None:
     bad = make_wheel(
         tmp_path / "a.whl",
         extra={
             "cognous_ocs-0.dist-info/entry_points.txt": (
-                "[console_scripts]\ncognous-ocs = ocs.cli:main\n"
+                "[console_scripts]\ncognous-ocs = cognous_ocs.cli:main\nocs = cognous_ocs.cli:main\n"
             )
         },
     )
-    assert any("`ocs = ocs.cli:main` missing" in e for e in wheel.check(bad))
+    assert any("`ocs` console script must not ship" in e for e in wheel.check(bad))
 
 
 def test_wheel_must_be_named_for_the_distribution(tmp_path: Path) -> None:

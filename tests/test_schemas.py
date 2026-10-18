@@ -1,4 +1,4 @@
-"""`ocs schema export`, the v1 snapshots, and the snapshot immutability check."""
+"""`cognous-ocs schema export`, the v1 snapshots, and the snapshot immutability check."""
 
 from __future__ import annotations
 
@@ -13,10 +13,10 @@ from typing import Any
 import pytest
 from jsonschema import Draft202012Validator
 
+from cognous_ocs import ENVELOPE_VERSION, schemas
+from cognous_ocs.cli import main
+from cognous_ocs.envelope import OUTCOMES, exit_code_for
 from conftest import REPO_ROOT, load_script
-from ocs import ENVELOPE_VERSION, schemas
-from ocs.cli import main
-from ocs.envelope import OUTCOMES, exit_code_for
 
 snap = load_script("check_schema_snapshots")
 SCHEMAS = REPO_ROOT / "schemas" / "v1"
@@ -129,7 +129,7 @@ def test_load_bundled_checks_every_hash(monkeypatch: pytest.MonkeyPatch, tmp_pat
         schemas.load_bundled()
 
 
-# the schemas describe what ocs really emits
+# the schemas describe what cognous-ocs really emits
 
 
 def test_schema_constants_match_the_code() -> None:
@@ -163,7 +163,7 @@ def test_schema_accepts_exactly_the_exit_code_mapping(outcome: str, strict: bool
 
 def test_real_results_validate_against_the_envelope_schema(ws: Path) -> None:
     v = validator("envelope.schema.json")
-    from ocs import fixtures_data
+    from cognous_ocs import fixtures_data
 
     (ws / "pack.json").write_bytes(fixtures_data.read_fixture("evidence-pack.json"))
     (ws / "bad.json").write_text("[]")

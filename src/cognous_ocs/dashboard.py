@@ -1,4 +1,4 @@
-"""`ocs dashboard`: one static, read-only HTML reading of verification and evidence artifacts.
+"""`cognous-ocs dashboard`: one static, read-only HTML reading of verification and evidence artifacts.
 
 Inputs (any subset, files or demo output directories): verification reports and mutation
 reports from `cognous-verify` (ODES verification-report contract), evidence packs, the bounded
@@ -24,8 +24,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from ocs import __version__, render
-from ocs.envelope import OCS_INPUT_INVALID, OCS_KIND_UNREGISTERED, OCS_PATHS, strip_controls
+from cognous_ocs import __version__, render
+from cognous_ocs.envelope import OCS_INPUT_INVALID, OCS_KIND_UNREGISTERED, OCS_PATHS, strip_controls
 
 MAX_FILE_BYTES = 40_000_000
 MAX_STRING = 4000
@@ -883,7 +883,7 @@ def _evidence_section(src: Source) -> str:
     return (
         f'<ul class="counts" aria-label="Counts from the pack">{figs}</ul>{table}'
         '<p class="muted">Counts of what the pack lists. The pack was not validated here; '
-        "<code>ocs evidence render</code> shows the full pack.</p>"
+        "<code>cognous-ocs evidence render</code> shows the full pack.</p>"
     )
 
 
@@ -1201,7 +1201,7 @@ def render_html(bundle: Bundle) -> str:
 <section class="boundary" aria-labelledby="dnp" style="margin-top:1.6rem"><h2 id="dnp">What this page does not prove</h2>
 <ul>{own}</ul>{theirs_block}</section>
 {"".join(sections)}
-<footer>Rendered by ocs {_e(__version__)} from the files as given, offline. No request is made and no timestamp of rendering is embedded, so the same inputs give the same bytes. Hover or focus a digest and click to copy the whole value.</footer>
+<footer>Rendered by cognous-ocs {_e(__version__)} from the files as given, offline. No request is made and no timestamp of rendering is embedded, so the same inputs give the same bytes. Hover or focus a digest and click to copy the whole value.</footer>
 <div id="copy-status" role="status" aria-live="polite"></div>
 </main>
 </body>
@@ -1220,9 +1220,9 @@ def input_files(path: Path) -> list[Path]:
 
 def run_dashboard(out_raw: str, inputs: list[str], *, strict: bool = False) -> Any:
     """Read the named inputs and write one HTML file. Returns a cli.Outcome."""
-    from ocs import cli
-    from ocs.envelope import INVALID, PASS, Result
-    from ocs.paths import PathRefused, confine_output, refuse_alias
+    from cognous_ocs import cli
+    from cognous_ocs.envelope import INVALID, PASS, Result
+    from cognous_ocs.paths import PathRefused, confine_output, refuse_alias
 
     subject: dict[str, Any] = {"kind": "dashboard", "inputs": len(inputs)}
 

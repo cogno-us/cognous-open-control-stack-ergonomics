@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NoReturn
 
-from ocs import CONTRACT_VERSION, DISTRIBUTION, EXAMPLE_NAME, __version__
-from ocs.envelope import (
+from cognous_ocs import CONTRACT_VERSION, EXAMPLE_NAME, __version__
+from cognous_ocs.envelope import (
     ERROR,
     INVALID,
     OCS_INPUT_INVALID,
@@ -21,9 +21,9 @@ from ocs.envelope import (
     Result,
     write_diagnostics,
 )
-from ocs.fixtures_data import example_version
-from ocs.lock import COMPONENTS
-from ocs.paths import PathRefused, confine_output
+from cognous_ocs.fixtures_data import example_version
+from cognous_ocs.lock import COMPONENTS
+from cognous_ocs.paths import PathRefused, confine_output
 
 
 class UsageError(Exception):
@@ -61,7 +61,9 @@ def _common() -> argparse.ArgumentParser:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = _Parser(prog="ocs", description="Front door to the Cognous Open Control Stack.")
+    parser = _Parser(
+        prog="cognous-ocs", description="Front door to the Cognous Open Control Stack."
+    )
     parser.add_argument(
         "--version", action="store_true", help="print CLI, contract and bundled versions"
     )
@@ -75,15 +77,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _register(sub: argparse._SubParsersAction[_Parser]) -> None:
     """Subcommands are added by their own modules as they land."""
-    from ocs import commands
+    from cognous_ocs import commands
 
     commands.register(sub, _common())
 
 
 def version_text() -> str:
     lines = [
-        f"ocs {__version__}",
-        f"distribution {DISTRIBUTION}",
+        f"cognous-ocs {__version__}",
         f"cli-contract {CONTRACT_VERSION}",
     ]
     lines.append(f"bundled-example {EXAMPLE_NAME} {example_version()}")
@@ -118,7 +119,7 @@ def _diagnostics_dir(declared: Path | None) -> Path | None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args_in = list(sys.argv[1:] if argv is None else argv)
-    from ocs import passthrough  # lazy: passthrough imports modules that import this one
+    from cognous_ocs import passthrough  # lazy: passthrough imports modules that import this one
 
     pt = passthrough.detect(args_in)
     if pt is not None:
@@ -130,7 +131,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args = parser.parse_args(args_in)
     except UsageError as exc:
         result = Result(
-            command="ocs",
+            command="cognous-ocs",
             outcome=INVALID,
             reason_codes=[OCS_INPUT_INVALID],
             messages=[f"usage error: {exc}"],
@@ -141,10 +142,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command is None:
         result = Result(
-            command="ocs",
+            command="cognous-ocs",
             outcome=INVALID,
             reason_codes=[OCS_INPUT_INVALID],
-            messages=["no command given; see ocs --help"],
+            messages=["no command given; see cognous-ocs --help"],
         )
         return _finish(result, fmt, None)
     handler = HANDLERS[args.command]

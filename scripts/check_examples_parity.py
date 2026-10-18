@@ -1,6 +1,6 @@
 """Examples parity: bundled example fixtures are byte-equal to their recorded hashes.
 
-Reads src/ocs/fixtures/<example>/ straight from disk (not through the package), so it also
+Reads src/cognous_ocs/fixtures/<example>/ straight from disk (not through the package), so it also
 catches a stray, missing or edited file before a wheel is built. With --source-dir it also
 requires the files recorded as byte-equal to the hub example to match that checkout; the
 default run is offline and needs no hub checkout.
@@ -36,7 +36,7 @@ def sha(path: Path) -> str:
 
 
 def check(root: Path, source_dir: Path | None = None) -> list[str]:
-    base = root / "src" / "ocs" / "fixtures" / EXAMPLE
+    base = root / "src" / "cognous_ocs" / "fixtures" / EXAMPLE
     errors: list[str] = []
     try:
         prov = json.loads((base / "provenance.json").read_text(encoding="utf-8"))
@@ -100,21 +100,23 @@ SAMPLE = Path("examples") / "sample-repo"
 def check_sample(root: Path) -> list[str]:
     """The sample repository is the scaffold output plus the bundled evidence pack, byte for byte."""
     sys.path.insert(0, str(root / "src"))
-    from ocs import scaffold
+    from cognous_ocs import scaffold
 
     errors: list[str] = []
     base = root / SAMPLE
     for name, content in sorted(scaffold.managed_bytes().items()):
         target = base / "workflow" / name
         if not target.is_file() or target.read_bytes() != content:
-            errors.append(f"{SAMPLE}/workflow/{name}: differs from `ocs init workflow` output")
+            errors.append(
+                f"{SAMPLE}/workflow/{name}: differs from `cognous-ocs init workflow` output"
+            )
     extra = (
         {p.name for p in (base / "workflow").iterdir()} - set(scaffold.managed_bytes())
         if (base / "workflow").is_dir()
         else set()
     )
     errors += [f"{SAMPLE}/workflow/{name}: not part of the scaffold" for name in sorted(extra)]
-    pack = root / "src" / "ocs" / "fixtures" / EXAMPLE / "evidence-pack.json"
+    pack = root / "src" / "cognous_ocs" / "fixtures" / EXAMPLE / "evidence-pack.json"
     mine = base / "evidence" / "evidence-pack.json"
     if not mine.is_file() or mine.read_bytes() != pack.read_bytes():
         errors.append(

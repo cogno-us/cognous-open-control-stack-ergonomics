@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-from ocs import bind
-from ocs import fixtures_data as fx
+from cognous_ocs import bind
+from cognous_ocs import fixtures_data as fx
 
 CODES = ["grant_scope_mismatch"]
 

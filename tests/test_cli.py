@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from ocs import CONTRACT_VERSION, __version__
-from ocs.cli import main
+from cognous_ocs import CONTRACT_VERSION, __version__
+from cognous_ocs.cli import main
 
 
 def test_version_prints_cli_contract_and_example(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--version"]) == 0
     out = capsys.readouterr().out
-    assert f"ocs {__version__}" in out
+    assert f"cognous-ocs {__version__}" in out
     assert f"cli-contract {CONTRACT_VERSION}" in out
     assert "bundled-example customer-service 0.2.0" in out
     for command in ("aam", "acp", "arb", "agep"):
