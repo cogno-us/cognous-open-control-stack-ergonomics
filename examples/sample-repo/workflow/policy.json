@@ -1,0 +1,10 @@
+{
+  "policy_version": "scaffold-policy-0.1",
+  "allowed_tools": [
+    "notes_read"
+  ],
+  "blocked_tools": [
+    "report_send"
+  ],
+  "note": "Synthetic starter policy: reads allowed, the external send blocked until authority is recorded."
+}

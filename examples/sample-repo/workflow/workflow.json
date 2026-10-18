@@ -1,0 +1,12 @@
+{
+  "workflow_version": "0.1",
+  "manifest": "manifest.json",
+  "policy": "policy.json",
+  "run_record": "run-record.json",
+  "replay_signing": {
+    "mode": "demo-only"
+  },
+  "redaction": {
+    "profile": "targets"
+  }
+}

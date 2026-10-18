@@ -66,3 +66,120 @@ jobs:
           tail -n 12 "$RUNNER_TEMP/publish-check.log"
           if [ "$status" -eq 0 ]; then echo "publish check passed while publication is not authorized"; exit 1; fi
           grep -q "passing gates never authorizes publication" "$RUNNER_TEMP/publish-check.log"
+
+  action-sample:
+    # The composite action on a sample repository (examples/sample-repo): strict evidence run,
+    # then a non-assurance run that also opts in to the full upload.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - id: strict
+        uses: ./.github/actions/ocs
+        with:
+          workflow: examples/sample-repo/workflow
+          evidence-pack: examples/sample-repo/evidence/evidence-pack.json
+          out-dir: ocs-out-strict
+          upload-name: ocs-sample-strict
+      - id: nonassurance
+        uses: ./.github/actions/ocs
+        with:
+          workflow: examples/sample-repo/workflow
+          non-assurance: "true"
+          report-mode: fail-fast
+          upload-full-artifacts: "true"
+          retention-days: "3"
+          out-dir: ocs-out-na
+          upload-name: ocs-sample-na
+      - name: Check what the action produced
+        env:
+          STRICT_EXIT: ${{ steps.strict.outputs.exit-code }}
+          NA_EXIT: ${{ steps.nonassurance.outputs.exit-code }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          assert os.environ["STRICT_EXIT"] == "0", os.environ["STRICT_EXIT"]
+          assert os.environ["NA_EXIT"] == "0", os.environ["NA_EXIT"]
+          strict = json.loads(pathlib.Path("ocs-out-strict/ci-summary.json").read_text())
+          assert strict["outcome"] == "pass" and strict["extensions"]["x-profile"] == "strict-evidence", strict
+          assert pathlib.Path("ocs-out-strict/evidence/evidence-pack.json").is_file()
+          assert not pathlib.Path("ocs-out-strict/inputs").exists()
+          na = json.loads(pathlib.Path("ocs-out-na/ci-summary.json").read_text())
+          assert na["outcome"] == "review" and na["extensions"]["x-profile"] == "non-assurance", na
+          assert not pathlib.Path("ocs-out-na/evidence").exists()
+          assert pathlib.Path("ocs-out-na/inputs").is_dir()
+          PY
+
+  action-negative:
+    # Each of these must fail, with exit 2 and the right reason code in ci-diagnostics.json.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Install a copy of ocs that reports another version (9.9.9)
+        run: |
+          rm -rf "$RUNNER_TEMP/other-ocs"
+          cp -r "$GITHUB_WORKSPACE" "$RUNNER_TEMP/other-ocs"
+          rm -rf "$RUNNER_TEMP/other-ocs/.git"
+          sed -i 's/^__version__ = "[^"]*"/__version__ = "9.9.9"/' "$RUNNER_TEMP/other-ocs/src/ocs/__init__.py"
+          python3 -m venv "$RUNNER_TEMP/other-venv"
+          "$RUNNER_TEMP/other-venv/bin/python" -m pip install --quiet "$RUNNER_TEMP/other-ocs"
+          "$RUNNER_TEMP/other-venv/bin/ocs" --version | head -n 1
+          echo "$RUNNER_TEMP/other-venv/bin" >> "$GITHUB_PATH"
+      - id: mismatch
+        continue-on-error: true
+        uses: ./.github/actions/ocs
+        with:
+          workflow: examples/sample-repo/workflow
+          non-assurance: "true"
+          install: preinstalled
+          out-dir: neg-mismatch
+          upload-reports: "false"
+      - id: noprofile
+        continue-on-error: true
+        uses: ./.github/actions/ocs
+        with:
+          workflow: examples/sample-repo/workflow
+          out-dir: neg-noprofile
+          upload-reports: "false"
+      - id: outside
+        continue-on-error: true
+        uses: ./.github/actions/ocs
+        with:
+          workflow: examples/sample-repo/workflow
+          non-assurance: "true"
+          out-dir: /etc/ocs-out
+          upload-reports: "false"
+      - id: crlf
+        continue-on-error: true
+        uses: ./.github/actions/ocs
+        with:
+          workflow: "examples/sample-repo/workflow\nextra"
+          non-assurance: "true"
+          out-dir: neg-crlf
+          upload-reports: "false"
+      - name: Every negative case failed for the right reason
+        env:
+          OUTCOMES: ${{ steps.mismatch.outcome }} ${{ steps.noprofile.outcome }} ${{ steps.outside.outcome }} ${{ steps.crlf.outcome }}
+          MISMATCH_EXIT: ${{ steps.mismatch.outputs.exit-code }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          assert os.environ["OUTCOMES"] == "failure failure failure failure", os.environ["OUTCOMES"]
+          def diag(directory):
+              return json.loads(pathlib.Path(directory, "ci-diagnostics.json").read_text())
+          d = diag("neg-mismatch")
+          assert (d["exit_code"], d["reason_codes"]) == (2, ["OCS_VERSION"]), d
+          assert os.environ["MISMATCH_EXIT"] == "2", os.environ["MISMATCH_EXIT"]
+          d = diag("neg-noprofile")
+          assert (d["exit_code"], d["reason_codes"]) == (2, ["OCS_INPUT_INVALID"]), d
+          d = diag("neg-crlf")
+          assert (d["exit_code"], d["reason_codes"]) == (2, ["OCS_PATHS"]), d
+          assert not pathlib.Path("/etc/ocs-out").exists()
+          PY

@@ -131,6 +131,8 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 
 Version-bound: the action verifies the installed CLI version equals the version it was released with; mismatch exits 2. It refuses to run unless a strict evidence input or an explicit non-assurance mode is chosen. Default upload is the evidence pack, summaries and diagnostics, retention 14 days; raw run records need an explicit input. Third-party actions are pinned by commit SHA.
 
+**Correction (Phase 3):** the action is `.github/actions/ocs`, inputs and behaviour are in `docs/action.md`. `ocs ci` takes `--out DIR`, exactly one of `--evidence-pack PATH` (strict evidence input) or `--non-assurance`, `--manifest`, `--workflow`, `--report-mode full|fail-fast`, `--expect-version V` and `--copy-inputs`; it adds no reason code (version mismatch is `OCS_VERSION`, a refused profile `OCS_INPUT_INVALID`, a refused path `OCS_PATHS`). In non-assurance mode the best outcome is `review`, never `pass`.
+
 ## 10. Claim boundary
 
 No output, document or action label may say certified, compliant or production-ready while publication or production is on HOLD. `scripts/check_claim_boundaries.py` enforces it in `make check` and CI. State comes from the committed `release-state.json` (publication and production authorization, both false while on HOLD); a missing or malformed file counts as HOLD. A match is excused only by an exact entry in `scripts/claim_boundaries_allowlist.json`, and an entry that matches nothing fails the build. `ocs` output labels follow the stack's board, not the tool's own gates.

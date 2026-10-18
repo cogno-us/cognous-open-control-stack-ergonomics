@@ -6,7 +6,7 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import cli, demo, doctor, passthrough, registry, render, scaffold, schemas, validate
+from ocs import ci, cli, demo, doctor, passthrough, registry, render, scaffold, schemas, validate
 from ocs.envelope import (
     INVALID,
     OCS_PATHS,
@@ -75,6 +75,20 @@ def schema_command(args: argparse.Namespace) -> cli.Outcome:
     return cli.Outcome(result, diag_dir)
 
 
+def ci_command(args: argparse.Namespace) -> cli.Outcome:
+    return ci.run_ci(
+        args.out,
+        manifest=args.manifest,
+        workflow=args.workflow,
+        evidence_pack=args.evidence_pack,
+        non_assurance=bool(args.non_assurance),
+        report_mode=args.report_mode,
+        expect_version=args.expect_version,
+        copy_inputs=bool(args.copy_inputs),
+        strict=bool(getattr(args, "strict", False)),
+    )
+
+
 def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentParser) -> None:
     for layer, command in passthrough.LAYERS.items():
         if layer == "evidence":
@@ -115,6 +129,22 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     se.add_argument(
         "--out", required=True, help="directory to write (never replaces a differing file)"
     )
+    ci_p = sub.add_parser(
+        "ci", parents=[common], help="validate, gate and write reports (CI entry)"
+    )
+    ci_p.add_argument("--out", required=True, help="output directory (only ocs ci files in it)")
+    ci_p.add_argument("--manifest", default=None, help="action manifest to validate")
+    ci_p.add_argument("--workflow", default=None, help="workflow directory (see ocs init)")
+    ci_p.add_argument("--evidence-pack", default=None, help="strict evidence input to validate")
+    ci_p.add_argument(
+        "--non-assurance", action="store_true", help="explicit mode: no evidence pack is checked"
+    )
+    ci_p.add_argument("--report-mode", choices=ci.REPORT_MODES, default="full")
+    ci_p.add_argument("--expect-version", default=None, help="installed ocs must equal this")
+    ci_p.add_argument(
+        "--copy-inputs", action="store_true", help="also copy raw inputs to the output"
+    )
+    cli.HANDLERS["ci"] = ci_command
     cli.HANDLERS["schema"] = schema_command
     cli.HANDLERS["demo"] = demo_command
     cli.HANDLERS["validate"] = validate_command

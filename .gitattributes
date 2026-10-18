@@ -1,2 +1,3 @@
 schemas/** -text
 src/ocs/fixtures/** -text
+examples/** -text
