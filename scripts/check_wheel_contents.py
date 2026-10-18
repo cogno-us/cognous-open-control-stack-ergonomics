@@ -18,8 +18,11 @@ REQUIRED = [
     "ocs/fixtures/customer-service/replay-bundle.json",
     "ocs/fixtures/customer-service/evidence-pack.json",
     "ocs/fixtures/customer-service/provenance.json",
+    "ocs/schema_resources/SNAPSHOTS.json",
+    "ocs/schema_resources/v1/envelope.schema.json",
+    "ocs/schema_resources/v1/diagnostics.schema.json",
 ]
-REQUIRED_PREFIXES: list[str] = []
+REQUIRED_PREFIXES = ["ocs/schema_resources/v1/"]
 FORBIDDEN_PREFIXES = (
     "tests/",
     "scripts/",

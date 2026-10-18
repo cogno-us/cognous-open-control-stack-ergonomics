@@ -1,0 +1,9 @@
+{
+  "schema": "ocs-schema-snapshots/1",
+  "snapshots": {
+    "v1": {
+      "diagnostics.schema.json": "dd028e3e86bd28ec630441bf0a8f20892a88ab56aad52944400d48fb5ac7fec6",
+      "envelope.schema.json": "8bbf3708947ffe5f8552f37e8702d44dd8ff87a8c86bead6af822c984492de34"
+    }
+  }
+}

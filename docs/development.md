@@ -15,7 +15,7 @@ pip install -e ".[dev,stack]"
 
 | Target | What it does |
 |---|---|
-| `make check` | Fixed order: `lint`, `type`, `lock`, `tests`, `docs`, `claims`, `examples`, `build`. Stops at the first failure. |
+| `make check` | Fixed order: `lint`, `type`, `lock`, `tests`, `docs`, `claims`, `examples`, `schemas`, `build`. Stops at the first failure. |
 | `make lint` | `ruff check` and `ruff format --check`. |
 | `make type` | `mypy` in strict mode over `src`, `tests` and `scripts`. |
 | `make lock` | The `stack` extra pins equal `src/ocs/lock.py` (and any `requirements*.lock` file agrees). No lock files exist yet. |
@@ -23,6 +23,7 @@ pip install -e ".[dev,stack]"
 | `make docs` | Local links and anchors resolve, every docs page is linked from the README, versions and the command and exit-code tables match the code. |
 | `make claims` | The claim-boundary check (below). |
 | `make examples` | Bundled example fixtures are byte-equal to the hashes in `provenance.json`; no stray or missing file. |
+| `make schemas` | Every `schemas/vN/` snapshot matches the hashes in `schemas/SNAPSHOTS.json`; once a `v*` git tag exists, each snapshot directory present at the tag is byte-identical to it. See [schemas.md](schemas.md). |
 | `make build` | Builds the wheel and sdist into `dist/`. |
 | `make release-check` | `check`, then `wheel-check` (required and forbidden wheel members, claim scan of the shipped files) and `smoke` (clean virtualenv install of the wheel, then the demo run under `unshare -n`). `smoke` fails if no network-namespace tool works; `OCS_SMOKE_ALLOW_NO_NETNS=1` runs it without isolation, never in CI. |
 | `make release-publish-check` | Claim check, then `release-check`, then the authorization gate. The last step fails while `release-state.json` has `publication_authorized` or `production_authorized` false. Passing gates never authorizes publication. |

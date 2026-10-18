@@ -6,7 +6,7 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import cli, demo, doctor, passthrough, registry, render, scaffold, validate
+from ocs import cli, demo, doctor, passthrough, registry, render, scaffold, schemas, validate
 from ocs.envelope import (
     INVALID,
     OCS_PATHS,
@@ -67,6 +67,14 @@ def validate_command(args: argparse.Namespace) -> cli.Outcome:
     return validate.run_validate(args.path, args.kind)
 
 
+def schema_command(args: argparse.Namespace) -> cli.Outcome:
+    if getattr(args, "schema_command", None) != "export":
+        raise cli.UsageError("schema needs a subcommand: export")
+    result, diag_dir = schemas.export(args.out)
+    result.strict = bool(getattr(args, "strict", False))
+    return cli.Outcome(result, diag_dir)
+
+
 def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentParser) -> None:
     for layer, command in passthrough.LAYERS.items():
         if layer == "evidence":
@@ -99,6 +107,15 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     dr.add_argument("--workflow", default=None, help="workflow directory made by ocs init")
     cli.HANDLERS["init"] = lambda a: scaffold.run_init(a.out)
     cli.HANDLERS["doctor"] = lambda a: doctor.run_doctor(a.workflow)
+    sc = sub.add_parser(
+        "schema", parents=[common], help="schema snapshots bundled with this release"
+    )
+    sc_sub = sc.add_subparsers(dest="schema_command", parser_class=type(sc))
+    se = sc_sub.add_parser("export", parents=[common], help="write the bundled snapshots to DIR")
+    se.add_argument(
+        "--out", required=True, help="directory to write (never replaces a differing file)"
+    )
+    cli.HANDLERS["schema"] = schema_command
     cli.HANDLERS["demo"] = demo_command
     cli.HANDLERS["validate"] = validate_command
     cli.HANDLERS["evidence"] = _evidence_dispatch

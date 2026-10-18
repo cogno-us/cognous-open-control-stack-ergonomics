@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ocs:schema:envelope:1",
+  "title": "ocs result envelope, envelope_version 1",
+  "description": "The JSON object `ocs --format json` prints on standard output, one per run (docs/cli-contract.md section 4). A consumer selects its parser by envelope_version and treats an unknown version as invalid. This schema describes the shape only; it carries no verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["envelope_version", "command", "outcome", "exit_code", "reason_codes", "subject", "does_not_prove", "messages"],
+  "properties": {
+    "envelope_version": {"const": "1"},
+    "command": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["pass", "review", "not_evaluated", "fail", "invalid", "error"]},
+    "exit_code": {"type": "integer", "minimum": 0, "maximum": 4},
+    "reason_codes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "subject": {
+      "type": "object",
+      "description": "What was examined. Members vary by command; the named ones are typed when present.",
+      "properties": {
+        "kind": {"type": "string"},
+        "path": {"type": "string"},
+        "declared_version": {"type": ["string", "null"]}
+      }
+    },
+    "verdict_source": {
+      "type": "object",
+      "description": "The component whose decision the result relays. Present whenever a component produced the verdict.",
+      "additionalProperties": false,
+      "required": ["component", "contract", "contract_version"],
+      "properties": {
+        "component": {"type": "string", "minLength": 1},
+        "contract": {"type": "string", "minLength": 1},
+        "contract_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "does_not_prove": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "messages": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f\\u2028\\u2029]*$"}
+    },
+    "extensions": {
+      "type": "object",
+      "description": "The only place for members this schema does not name; every name starts with x-.",
+      "propertyNames": {"pattern": "^x-"}
+    }
+  },
+  "allOf": [
+    {
+      "description": "A pass always states what it does not prove.",
+      "if": {"properties": {"outcome": {"const": "pass"}}},
+      "then": {"properties": {"does_not_prove": {"minItems": 1}}}
+    },
+    {
+      "description": "outcome and exit_code agree (docs/cli-contract.md section 3); review exits 0, or 1 under --strict.",
+      "oneOf": [
+        {"properties": {"outcome": {"const": "pass"}, "exit_code": {"const": 0}}},
+        {"properties": {"outcome": {"const": "review"}, "exit_code": {"enum": [0, 1]}}},
+        {"properties": {"outcome": {"const": "fail"}, "exit_code": {"const": 1}}},
+        {"properties": {"outcome": {"const": "invalid"}, "exit_code": {"const": 2}}},
+        {"properties": {"outcome": {"const": "not_evaluated"}, "exit_code": {"const": 3}}},
+        {"properties": {"outcome": {"const": "error"}, "exit_code": {"const": 4}}}
+      ]
+    }
+  ]
+}
