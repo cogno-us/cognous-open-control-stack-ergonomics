@@ -8,7 +8,7 @@ Runs the bundled customer-service example end to end, offline, and exits 0 only 
 
 ## Pin note: the control plane is ahead of the hub lock
 
-The demo's control step runs `acp run`, which first exists in control-plane revision `83b49b5e` (cogno-us/cognous-control-plane#46). The hub's `component-lock.json` still pins the control plane at `d3dadee7`, which has no `acp run`. So **this repository's control-plane pin (`83b49b5e`) is now ahead of the hub's component-lock**. Manifest, replay bundle and evidence pack stay at their hub-lock pins. Nothing in the hub, the components or the qualification repository was changed for this.
+The demo's control step runs `acp run`, which first exists in control-plane revision `83b49b5e` (cogno-us/cognous-control-plane#46). The pin moved from `83b49b5e` to the programme-2 revision `3cd17ead` in the end-of-programme pin batch; the bundled example files the demo derives from are byte-identical at both revisions. The hub's `component-lock.json` still pins the control plane at `d3dadee7`, which has no `acp run`. So **this repository's control-plane pin (`3cd17ead`) is now ahead of the hub's component-lock**. Manifest, replay bundle and evidence pack stay at their hub-lock pins. Nothing in the hub, the components or the qualification repository was changed for this.
 
 This is a decision for the owner, and it is reversible by repinning: set the `agent-control-plane` line in `pyproject.toml` and `src/cognous_ocs/lock.py` back to `d3dadee7`, regenerate `requirements/stack.txt` with the documented `uv` command (see [testing.md](testing.md)), and the demo's control step will not run (there is no `acp run` at that revision). `provenance.json` records both commits under `control_plane_pin`.
 

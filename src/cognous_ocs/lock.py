@@ -1,9 +1,9 @@
 """The component pins `cognous-ocs` was built against.
 
 These mirror the entries in the hub's component-lock.json at the hub commit recorded in
-fixtures/customer-service/provenance.json, except the control plane: it is pinned to the first
-revision with `acp run` (83b49b5e), which is ahead of the hub lock (docs/demo.md and
-provenance.json record both). `cognous-ocs` calls each component only through its public command; it
+fixtures/customer-service/provenance.json, except the control plane: it is pinned to the programme-2
+revision 3cd17ead (the first revision with `acp run` is 83b49b5e), which is ahead of the hub lock
+(docs/demo.md and provenance.json record both). `cognous-ocs` calls each component only through its public command; it
 never imports component internals.
 """
 
@@ -39,7 +39,7 @@ COMPONENTS: dict[str, Component] = {
             "control",
             "control_plane",
             "cogno-us/cognous-control-plane",
-            "83b49b5e61cdacee916b502cdea775aefc72a064",
+            "3cd17ead6b24301290ad1e50ae4b22bbd93c12fb",
             "agent-control-plane",
             "acp",
             "run-record",
