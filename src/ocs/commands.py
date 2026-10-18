@@ -144,6 +144,10 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     ci_p.add_argument(
         "--copy-inputs", action="store_true", help="also copy raw inputs to the output"
     )
+    da = sub.add_parser("dashboard", parents=[common], help="one static HTML reading of reports")
+    da.add_argument("inputs", nargs="*", help="reports, packs, run records or demo directories")
+    da.add_argument("--out", required=True, help="HTML file to write")
+    cli.HANDLERS["dashboard"] = _dashboard_dispatch
     cli.HANDLERS["ci"] = ci_command
     cli.HANDLERS["schema"] = schema_command
     cli.HANDLERS["demo"] = demo_command
@@ -159,3 +163,12 @@ def _evidence_dispatch(args: argparse.Namespace) -> cli.Outcome:
     if getattr(args, "evidence_command", None) == "render":
         return evidence_render(args)
     raise cli.UsageError("evidence needs a subcommand: render, or an agep command")
+
+
+def _dashboard_dispatch(args: argparse.Namespace) -> cli.Outcome:
+    from ocs import dashboard  # own module; imported here to keep this table's edit small
+
+    outcome: cli.Outcome = dashboard.run_dashboard(
+        args.out, args.inputs, strict=bool(getattr(args, "strict", False))
+    )
+    return outcome

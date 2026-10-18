@@ -20,6 +20,7 @@ Scripts, CI jobs and people must be able to rely on what `ocs` returns without p
 | `ocs init workflow --out DIR` | Scaffold a manifest, a policy file and a sample run record | `DIR` only |
 | `ocs doctor [--workflow DIR]` | Read-only setup diagnosis | nothing |
 | `ocs evidence render PATH --out FILE` | One self-contained HTML view of an evidence pack | `FILE` only |
+| `ocs dashboard --out FILE INPUT...` | One self-contained, read-only HTML reading of reports, packs and run records; adds no verdict (`docs/dashboard.md`) | `FILE` only |
 | `ocs schema export --out DIR` | Export the schema snapshots bundled with this release | `DIR` only |
 | `ocs ci` | Entry used by the composite action: validate, gate, write diagnostics | declared output paths |
 | `ocs manifest ...`, `ocs replay ...`, `ocs evidence ...` | Thin per-layer passthrough to the component's own public command | as the component does |
