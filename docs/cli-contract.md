@@ -131,7 +131,7 @@ Version-bound: the action verifies the installed CLI version equals the version 
 
 ## 10. Claim boundary
 
-No output, document or action label may say certified, compliant or production-ready while publication or production is on HOLD. A build check enforces it from a committed allow-list (Phase 3). `ocs` output labels follow the stack's board, not the tool's own gates.
+No output, document or action label may say certified, compliant or production-ready while publication or production is on HOLD. `scripts/check_claim_boundaries.py` enforces it in `make check` and CI. State comes from the committed `release-state.json` (publication and production authorization, both false while on HOLD); a missing or malformed file counts as HOLD. A match is excused only by an exact entry in `scripts/claim_boundaries_allowlist.json`, and an entry that matches nothing fails the build. `ocs` output labels follow the stack's board, not the tool's own gates.
 
 ## 11. Open points (defaults recorded, owner review at the end)
 

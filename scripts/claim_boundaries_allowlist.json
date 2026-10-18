@@ -1,0 +1,58 @@
+{
+  "excluded_paths": [
+    {
+      "path": "LICENSE",
+      "reason": "Apache-2.0 legal text, reproduced verbatim; not a claim by this project"
+    },
+    {
+      "path": "tests/",
+      "reason": "test sources build positive cases on purpose; they are not documents, labels or output"
+    },
+    {
+      "path": "scripts/check_claim_boundaries.py",
+      "reason": "defines the forbidden phrases"
+    },
+    {
+      "path": "scripts/claim_boundaries_allowlist.json",
+      "reason": "this file quotes the lines it excuses"
+    }
+  ],
+  "allowed": [
+    {
+      "path": "README.md",
+      "rule": "certified",
+      "line": "5. **Claims are checked by code.** The build fails if a document says certified, compliant or production-ready while publication or production is on HOLD.",
+      "reason": "states the rule this checker enforces; a prohibition, not a claim"
+    },
+    {
+      "path": "README.md",
+      "rule": "compliant",
+      "line": "5. **Claims are checked by code.** The build fails if a document says certified, compliant or production-ready while publication or production is on HOLD.",
+      "reason": "states the rule this checker enforces; a prohibition, not a claim"
+    },
+    {
+      "path": "README.md",
+      "rule": "production-ready",
+      "line": "5. **Claims are checked by code.** The build fails if a document says certified, compliant or production-ready while publication or production is on HOLD.",
+      "reason": "states the rule this checker enforces; a prohibition, not a claim"
+    },
+    {
+      "path": "docs/cli-contract.md",
+      "rule": "certified",
+      "line": "No output, document or action label may say certified, compliant or production-ready while publication or production is on HOLD. `scripts/check_claim_boundaries.py` enforces it in `make check` and CI. State comes from the committed `release-state.json` (publication and production authorization, both false while on HOLD); a missing or malformed file counts as HOLD. A match is excused only by an exact entry in `scripts/claim_boundaries_allowlist.json`, and an entry that matches nothing fails the build. `ocs` output labels follow the stack's board, not the tool's own gates.",
+      "reason": "states the rule this checker enforces; a prohibition, not a claim"
+    },
+    {
+      "path": "docs/cli-contract.md",
+      "rule": "compliant",
+      "line": "No output, document or action label may say certified, compliant or production-ready while publication or production is on HOLD. `scripts/check_claim_boundaries.py` enforces it in `make check` and CI. State comes from the committed `release-state.json` (publication and production authorization, both false while on HOLD); a missing or malformed file counts as HOLD. A match is excused only by an exact entry in `scripts/claim_boundaries_allowlist.json`, and an entry that matches nothing fails the build. `ocs` output labels follow the stack's board, not the tool's own gates.",
+      "reason": "states the rule this checker enforces; a prohibition, not a claim"
+    },
+    {
+      "path": "docs/cli-contract.md",
+      "rule": "production-ready",
+      "line": "No output, document or action label may say certified, compliant or production-ready while publication or production is on HOLD. `scripts/check_claim_boundaries.py` enforces it in `make check` and CI. State comes from the committed `release-state.json` (publication and production authorization, both false while on HOLD); a missing or malformed file counts as HOLD. A match is excused only by an exact entry in `scripts/claim_boundaries_allowlist.json`, and an entry that matches nothing fails the build. `ocs` output labels follow the stack's board, not the tool's own gates.",
+      "reason": "states the rule this checker enforces; a prohibition, not a claim"
+    }
+  ]
+}

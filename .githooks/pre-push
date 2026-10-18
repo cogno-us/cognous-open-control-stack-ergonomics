@@ -1,0 +1,5 @@
+#!/bin/sh
+# Enabled per clone with: git config core.hooksPath .githooks   (never enabled automatically)
+# Runs lint and the claim-boundary check before a push. Needs the dev virtualenv active.
+set -e
+exec make pre-push

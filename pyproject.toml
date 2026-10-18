@@ -38,6 +38,8 @@ dev = [
     "pytest-socket>=0.7",
     "mypy>=1.10",
     "ruff>=0.5",
+    "build>=1.2",
+    "hatchling>=1.25",
 ]
 
 [project.scripts]
@@ -50,7 +52,7 @@ allow-direct-references = true
 packages = ["src/ocs"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/ocs", "tests", "docs", "README.md", "LICENSE", "pyproject.toml"]
+include = ["src/ocs", "tests", "docs", "scripts", ".githooks", "Makefile", "release-state.json", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -63,12 +65,12 @@ branch = true
 [tool.mypy]
 strict = true
 python_version = "3.11"
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["src", "tests"]
+src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
@@ -77,4 +79,5 @@ select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
 "tests/*" = ["S101", "S603", "S607"]
 "src/ocs/demo.py" = ["S603", "E501"]
 "src/ocs/render.py" = ["E501"]
+"scripts/*" = ["E501", "S101", "S603", "S607", "SIM", "RUF", "E402"]
 "tools/*" = ["E501", "E741", "S603", "S607", "SIM", "B", "RUF"]
