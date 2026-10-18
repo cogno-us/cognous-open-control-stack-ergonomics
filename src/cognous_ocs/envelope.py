@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ocs import ENVELOPE_VERSION
+from cognous_ocs import ENVELOPE_VERSION
 
 # Outcomes. `error` is not one of the five in the Phase 0 draft: exit 4 had no
 # outcome, so the draft is corrected (docs/cli-contract.md section 4).
@@ -65,7 +65,7 @@ def has_crlf(value: str) -> bool:
 
 @dataclass
 class Result:
-    """One run's outcome. `ocs` adds no verdict of its own: verdict_source names a component."""
+    """One run's outcome. `cognous-ocs` adds no verdict of its own: verdict_source names a component."""
 
     command: str
     outcome: str

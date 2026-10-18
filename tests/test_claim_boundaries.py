@@ -62,7 +62,7 @@ def test_positive_cases_are_found(text: str, rule: str) -> None:
         "The production environment is ready when the queue drains.",
         "Readiness checks for production traffic",
         "reply and apply",
-        "ocs relays component verdicts and decides nothing.",
+        "cognous-ocs relays component verdicts and decides nothing.",
         "Ready to use for a demo; the demo is not a release.",
     ],
 )
@@ -201,7 +201,7 @@ def test_built_wheel_text_is_scanned(tmp_path: Path) -> None:
     with zipfile.ZipFile(wheel, "w") as zf:
         zf.writestr("cognous_ocs-0.dist-info/METADATA", f"Name: cognous-ocs\n\nIt is {COMPL}.\n")
         zf.writestr("cognous_ocs-0.dist-info/licenses/LICENSE", f"{COMPL}\n")
-        zf.writestr("ocs/data.bin", b"\xff\xfe")
+        zf.writestr("cognous_ocs/data.bin", b"\xff\xfe")
     code, msgs = cb.run(tmp_path, [wheel])
     assert code == 1
     assert any("README.md:1" in m for m in msgs)
@@ -248,7 +248,7 @@ def test_this_repository_is_on_hold() -> None:
 
 def test_cli_strings_are_free_of_claim_words(ws: Path) -> None:
     """Runtime output, not just source: version text, usage errors, an evidence render."""
-    from ocs import cli, fixtures_data
+    from cognous_ocs import cli, fixtures_data
 
     texts = [cli.version_text()]
     pack = ws / "pack.json"
@@ -274,7 +274,7 @@ def test_demo_output_is_free_of_claim_words(ws: Path, stack: None) -> None:
     import contextlib
     import io
 
-    from ocs import cli
+    from cognous_ocs import cli
 
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):

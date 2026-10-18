@@ -5,7 +5,7 @@ from __future__ import annotations
 import stat
 from pathlib import Path
 
-from ocs.lock import COMPONENTS
+from cognous_ocs.lock import COMPONENTS
 
 
 def pinned(distribution: str) -> str | None:

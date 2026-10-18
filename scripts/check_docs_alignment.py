@@ -78,9 +78,9 @@ def check_contents(root: Path) -> list[str]:
 
 def _code_facts(root: Path) -> tuple[str, str, set[str], dict[int, str]]:
     sys.path.insert(0, str(root / "src"))
-    from ocs import CONTRACT_VERSION, __version__
-    from ocs.cli import build_parser
-    from ocs.envelope import OUTCOMES, exit_code_for
+    from cognous_ocs import CONTRACT_VERSION, __version__
+    from cognous_ocs.cli import build_parser
+    from cognous_ocs.envelope import OUTCOMES, exit_code_for
 
     parser = build_parser()
     commands: set[str] = set()
@@ -101,10 +101,10 @@ def check_versions_and_commands(root: Path) -> list[str]:
         errors.append(f"docs/cli-contract.md: title does not name draft {contract}")
     pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
     if f'version = "{version}"' not in pyproject:
-        errors.append(f"pyproject.toml: version differs from ocs.__version__ {version}")
+        errors.append(f"pyproject.toml: version differs from cognous_ocs.__version__ {version}")
     table = contract_md.split("## 2. Commands", 1)[1].split("## 3.", 1)[0]
     for name in sorted(commands):
-        if not re.search(rf"`ocs {re.escape(name)}[ `\[]", table):
+        if not re.search(rf"`cognous-ocs {re.escape(name)}[ `\[]", table):
             errors.append(f"docs/cli-contract.md: registered command {name!r} is not in section 2")
     exit_table = contract_md.split("## 3. Exit codes", 1)[1].split("Rules:", 1)[0]
     documented = {int(m.group(1)) for m in re.finditer(r"^\| (\d) \|", exit_table, re.M)}

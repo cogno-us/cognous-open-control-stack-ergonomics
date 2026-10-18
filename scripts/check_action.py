@@ -8,7 +8,7 @@
   named in docs/action.md.
 - The minimal upload names files and the two report directories, never the whole output
   directory; retention defaults to 14 days; the full upload defaults to off.
-- release-version.txt equals the package version (ocs.__version__ and pyproject.toml).
+- release-version.txt equals the package version (cognous_ocs.__version__ and pyproject.toml).
 """
 
 from __future__ import annotations
@@ -132,7 +132,7 @@ def check_action(root: Path) -> list[str]:
 
 def check_version(root: Path) -> list[str]:
     sys.path.insert(0, str(root / "src"))
-    from ocs import __version__
+    from cognous_ocs import __version__
 
     try:
         released = (root / ACTION_DIR / "release-version.txt").read_text(encoding="utf-8").strip()
@@ -143,7 +143,9 @@ def check_version(root: Path) -> list[str]:
     ]
     errors = []
     if released != __version__:
-        errors.append(f"release-version.txt {released!r} != ocs.__version__ {__version__!r}")
+        errors.append(
+            f"release-version.txt {released!r} != cognous_ocs.__version__ {__version__!r}"
+        )
     if released != project:
         errors.append(f"release-version.txt {released!r} != pyproject version {project!r}")
     return errors

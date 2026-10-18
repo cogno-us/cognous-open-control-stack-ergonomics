@@ -13,9 +13,9 @@ reimplemented here, not copied from the control plane's examples/acp_run; proven
 which example files they were modelled on (path and hash), and that none is a byte copy.
 
 Usage (offline, read-only toward the checkouts):
-  python tools/derive_fixtures.py --hub HUBDIR --components DIR --out src/ocs/fixtures/customer-service
+  python tools/derive_fixtures.py --hub HUBDIR --components DIR --out src/cognous_ocs/fixtures/customer-service
 
-DIR holds checkouts named after the repositories, each at the commit pinned in ocs.lock.
+DIR holds checkouts named after the repositories, each at the commit pinned in cognous_ocs.lock.
 """
 
 from __future__ import annotations
@@ -29,11 +29,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from ocs.lock import COMPONENTS  # noqa: E402
+from cognous_ocs.lock import COMPONENTS  # noqa: E402
 
 EXAMPLE_VERSION = "0.2.0"
 # The first control-plane revision with `acp run` is cogno-us/cognous-control-plane#46. The hub's
-# component-lock still pins an older control-plane revision; ocs is deliberately ahead of it.
+# component-lock still pins an older control-plane revision; cognous-ocs is deliberately ahead of it.
 ACP_RUN_MODELLED_ON = (
     "examples/acp_run/manifest.json",
     "examples/acp_run/authorized/proposal.json",

@@ -1,10 +1,10 @@
-# `ocs validate`
+# `cognous-ocs validate`
 
 ```
-ocs validate PATH --kind {manifest,run-record,replay-bundle,evidence-pack} [--format json]
+cognous-ocs validate PATH --kind {manifest,run-record,replay-bundle,evidence-pack} [--format json]
 ```
 
-Checks one artifact by running the component's own public validator in a subprocess. `ocs` never imports component code and adds no verdict of its own.
+Checks one artifact by running the component's own public validator in a subprocess. `cognous-ocs` never imports component code and adds no verdict of its own.
 
 ## How the check is chosen
 

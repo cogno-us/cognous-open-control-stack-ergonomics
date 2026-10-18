@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from ocs.paths import PathRefused, check_input, confine_output, refuse_alias
+from cognous_ocs.paths import PathRefused, check_input, confine_output, refuse_alias
 
 
 def test_relative_output_inside_workspace(ws: Path) -> None:

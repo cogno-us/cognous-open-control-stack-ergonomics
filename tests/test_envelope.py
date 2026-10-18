@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from ocs import envelope as env
+from cognous_ocs import envelope as env
 
 
 def test_exit_code_map() -> None:

@@ -7,9 +7,9 @@ from typing import Any
 
 import pytest
 
-from ocs import fixtures_data as fx
-from ocs import render
-from ocs.cli import main
+from cognous_ocs import fixtures_data as fx
+from cognous_ocs import render
+from cognous_ocs.cli import main
 
 
 def pack_dict() -> dict[str, Any]:

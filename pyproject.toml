@@ -25,7 +25,7 @@ dependencies = []
 # The four components. Manifest, replay bundle and evidence pack are pinned to the commits in the
 # hub's component-lock.json; the control plane is pinned ahead of it, to the first revision with
 # `acp run` (see docs/demo.md; both are recorded in
-# src/ocs/fixtures/customer-service/provenance.json). Direct
+# src/cognous_ocs/fixtures/customer-service/provenance.json). Direct
 # references: this extra is for installing from this repository, not for an
 # index upload. Nothing is published from this repository.
 stack = [
@@ -48,27 +48,26 @@ dev = [
     "hatchling>=1.25",
 ]
 
-# The typed command stays `ocs`; `cognous-ocs` is an alias console script for the same entry point.
+# The only installed command is `cognous-ocs` (no `ocs` script: that name is probably taken).
 [project.scripts]
-ocs = "ocs.cli:main"
-cognous-ocs = "ocs.cli:main"
+cognous-ocs = "cognous_ocs.cli:main"
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ocs"]
+packages = ["src/cognous_ocs"]
 
-# The frozen schema snapshots ship as package data under ocs/schema_resources/.
+# The frozen schema snapshots ship as package data under cognous_ocs/schema_resources/.
 [tool.hatch.build.targets.wheel.force-include]
-"schemas" = "ocs/schema_resources"
+"schemas" = "cognous_ocs/schema_resources"
 
 [tool.hatch.build.targets.sdist]
-include = ["src/ocs", "tests", "docs", "scripts", ".githooks", "Makefile", "release-state.json", "schemas", "examples", "requirements", ".github/actions", ".gitattributes", "README.md", "LICENSE", "pyproject.toml"]
+include = ["src/cognous_ocs", "tests", "docs", "scripts", ".githooks", "Makefile", "release-state.json", "schemas", "examples", "requirements", ".github/actions", ".gitattributes", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--disable-socket --strict-markers --strict-config --cov=ocs --cov-report=term-missing --cov-fail-under=80"
+addopts = "--disable-socket --strict-markers --strict-config --cov=cognous_ocs --cov-report=term-missing --cov-fail-under=80"
 filterwarnings = ["error"]
 markers = ["integration: runs the real pinned component commands (needs the stack extra)"]
 
@@ -89,10 +88,18 @@ src = ["src", "tests", "scripts"]
 select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S603", "S607"]
-"src/ocs/demo.py" = ["S603", "E501"]
-"src/ocs/render.py" = ["E501"]
-"src/ocs/dashboard.py" = ["E501"]
+"tests/*" = ["S101", "S603", "S607", "E501"]
+# The rename to `cognous-ocs` lengthened docstring and message lines in these files.
+"src/cognous_ocs/ci.py" = ["E501"]
+"src/cognous_ocs/doctor.py" = ["E501"]
+"src/cognous_ocs/envelope.py" = ["E501"]
+"src/cognous_ocs/passthrough.py" = ["E501"]
+"src/cognous_ocs/registry.py" = ["E501"]
+"src/cognous_ocs/schemas.py" = ["E501"]
+"src/cognous_ocs/validate.py" = ["E501"]
+"src/cognous_ocs/demo.py" = ["S603", "E501"]
+"src/cognous_ocs/render.py" = ["E501"]
+"src/cognous_ocs/dashboard.py" = ["E501"]
 "scripts/*" = ["E501", "S101", "S603", "S607", "SIM", "RUF", "E402"]
 ".github/actions/ocs/*" = ["E501", "S101"]
 "tools/*" = ["E501", "E741", "S603", "S607", "SIM", "B", "RUF"]

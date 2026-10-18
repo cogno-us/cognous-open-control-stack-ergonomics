@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (components pinned in ocs.lock; the control plane is pinned ahead of the hub lock)
+      - name: Install (components pinned in cognous_ocs.lock; the control plane is pinned ahead of the hub lock)
         run: python -m pip install -e ".[dev,stack]"
       - name: make check (lint, types, lock, tests with sockets off, docs, claims, examples, build)
         run: make check
@@ -122,15 +122,15 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
-      - name: Install a copy of ocs that reports another version (9.9.9)
+      - name: Install a copy of cognous-ocs that reports another version (9.9.9)
         run: |
           rm -rf "$RUNNER_TEMP/other-ocs"
           cp -r "$GITHUB_WORKSPACE" "$RUNNER_TEMP/other-ocs"
           rm -rf "$RUNNER_TEMP/other-ocs/.git"
-          sed -i 's/^__version__ = "[^"]*"/__version__ = "9.9.9"/' "$RUNNER_TEMP/other-ocs/src/ocs/__init__.py"
+          sed -i 's/^__version__ = "[^"]*"/__version__ = "9.9.9"/' "$RUNNER_TEMP/other-ocs/src/cognous_ocs/__init__.py"
           python3 -m venv "$RUNNER_TEMP/other-venv"
           "$RUNNER_TEMP/other-venv/bin/python" -m pip install --quiet "$RUNNER_TEMP/other-ocs"
-          "$RUNNER_TEMP/other-venv/bin/ocs" --version | head -n 1
+          "$RUNNER_TEMP/other-venv/bin/cognous-ocs" --version | head -n 1
           echo "$RUNNER_TEMP/other-venv/bin" >> "$GITHUB_PATH"
       - id: mismatch
         continue-on-error: true

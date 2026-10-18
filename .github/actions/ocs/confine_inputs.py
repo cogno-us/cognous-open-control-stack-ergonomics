@@ -1,4 +1,4 @@
-"""Input and output-path confinement for the ocs composite action. Standard library only.
+"""Input and output-path confinement for the cognous-ocs composite action. Standard library only.
 
 It runs before anything is installed or executed, and it is the only place action inputs are
 read. Every input arrives through the environment (`OCS_IN_*`), never interpolated into a shell
@@ -12,7 +12,7 @@ script. It refuses (exit 2) and writes nothing outside the confined output direc
 - an enumerated or numeric input is out of range.
 
 Messages are fixed text: an input value is never echoed (workflow-command injection).
-The path rules mirror `ocs.paths`; tests/test_action.py runs both on the same cases.
+The path rules mirror `cognous_ocs.paths`; tests/test_action.py runs both on the same cases.
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ def roots(workspace: Path, runner_temp: Path | None) -> list[Path]:
 
 
 def confine_output(raw: str, workspace: Path, runner_temp: Path | None) -> Path:
-    """The absolute output directory, or Refused. Same rules as ocs.paths.confine_output."""
+    """The absolute output directory, or Refused. Same rules as cognous_ocs.paths.confine_output."""
     if _bad_text(raw) or not raw:
         raise Refused("OCS_PATHS", "output path is empty or contains a CR, LF or NUL character")
     base = Path(os.path.normpath(workspace))
@@ -129,7 +129,7 @@ def plan(env: dict[str, str], workspace: Path, runner_temp: Path | None) -> dict
         raise Refused("OCS_PATHS", "an input contains a CR, LF or NUL character")
     out = confine_output(values["OUT_DIR"], workspace, runner_temp)
     if out.exists() and any(child.name not in OWNED for child in out.iterdir()):
-        raise Refused("OCS_PATHS", "the output directory holds files ocs ci does not own")
+        raise Refused("OCS_PATHS", "the output directory holds files cognous-ocs ci does not own")
     for key, allowed in (
         ("REPORT_MODE", REPORT_MODES),
         ("INSTALL", INSTALL_MODES),
@@ -201,7 +201,7 @@ def main(env: dict[str, str] | None = None) -> int:
     try:
         values = plan(env, workspace, temp)
     except Refused as exc:
-        sys.stderr.write(f"::error title=ocs action::{exc.message}\n")
+        sys.stderr.write(f"::error title=cognous-ocs action::{exc.message}\n")
         # Leave a diagnostics file only where the output directory itself was acceptable.
         try:
             out = confine_output(env.get("OCS_IN_OUT_DIR") or DEFAULTS["OUT_DIR"], workspace, temp)

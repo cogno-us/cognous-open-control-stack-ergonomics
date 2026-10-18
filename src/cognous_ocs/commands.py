@@ -6,14 +6,25 @@ import argparse
 import hashlib
 from typing import Any
 
-from ocs import ci, cli, demo, doctor, passthrough, registry, render, scaffold, schemas, validate
-from ocs.envelope import (
+from cognous_ocs import (
+    ci,
+    cli,
+    demo,
+    doctor,
+    passthrough,
+    registry,
+    render,
+    scaffold,
+    schemas,
+    validate,
+)
+from cognous_ocs.envelope import (
     INVALID,
     OCS_PATHS,
     PASS,
     Result,
 )
-from ocs.paths import PathRefused, check_input, confine_output, refuse_alias
+from cognous_ocs.paths import PathRefused, check_input, confine_output, refuse_alias
 
 
 def evidence_render(args: argparse.Namespace) -> cli.Outcome:
@@ -99,7 +110,9 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
         ).add_argument("component_args", nargs=argparse.REMAINDER)
         cli.HANDLERS[layer] = _unreachable
     evidence = sub.add_parser(
-        "evidence", parents=[common], help="`render` is ocs's own; other commands run agep as it is"
+        "evidence",
+        parents=[common],
+        help="`render` is cognous-ocs's own; other commands run agep as it is",
     )
     evidence_sub = evidence.add_subparsers(dest="evidence_command", parser_class=type(evidence))
     r = evidence_sub.add_parser("render", parents=[common], help="one self-contained HTML view")
@@ -118,7 +131,7 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     i.add_argument("what", choices=("workflow",))
     i.add_argument("--out", required=True, help="directory to scaffold (created if missing)")
     dr = sub.add_parser("doctor", parents=[common], help="read-only setup diagnosis")
-    dr.add_argument("--workflow", default=None, help="workflow directory made by ocs init")
+    dr.add_argument("--workflow", default=None, help="workflow directory made by cognous-ocs init")
     cli.HANDLERS["init"] = lambda a: scaffold.run_init(a.out)
     cli.HANDLERS["doctor"] = lambda a: doctor.run_doctor(a.workflow)
     sc = sub.add_parser(
@@ -132,15 +145,19 @@ def register(sub: argparse._SubParsersAction[Any], common: argparse.ArgumentPars
     ci_p = sub.add_parser(
         "ci", parents=[common], help="validate, gate and write reports (CI entry)"
     )
-    ci_p.add_argument("--out", required=True, help="output directory (only ocs ci files in it)")
+    ci_p.add_argument(
+        "--out", required=True, help="output directory (only cognous-ocs ci files in it)"
+    )
     ci_p.add_argument("--manifest", default=None, help="action manifest to validate")
-    ci_p.add_argument("--workflow", default=None, help="workflow directory (see ocs init)")
+    ci_p.add_argument("--workflow", default=None, help="workflow directory (see cognous-ocs init)")
     ci_p.add_argument("--evidence-pack", default=None, help="strict evidence input to validate")
     ci_p.add_argument(
         "--non-assurance", action="store_true", help="explicit mode: no evidence pack is checked"
     )
     ci_p.add_argument("--report-mode", choices=ci.REPORT_MODES, default="full")
-    ci_p.add_argument("--expect-version", default=None, help="installed ocs must equal this")
+    ci_p.add_argument(
+        "--expect-version", default=None, help="installed cognous-ocs must equal this"
+    )
     ci_p.add_argument(
         "--copy-inputs", action="store_true", help="also copy raw inputs to the output"
     )
@@ -166,7 +183,7 @@ def _evidence_dispatch(args: argparse.Namespace) -> cli.Outcome:
 
 
 def _dashboard_dispatch(args: argparse.Namespace) -> cli.Outcome:
-    from ocs import dashboard  # own module; imported here to keep this table's edit small
+    from cognous_ocs import dashboard  # own module; imported here to keep this table's edit small
 
     outcome: cli.Outcome = dashboard.run_dashboard(
         args.out, args.inputs, strict=bool(getattr(args, "strict", False))

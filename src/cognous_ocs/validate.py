@@ -1,8 +1,8 @@
-"""`ocs validate PATH --kind KIND`: one artifact, checked by the component's own public command.
+"""`cognous-ocs validate PATH --kind KIND`: one artifact, checked by the component's own public command.
 
 The `--kind` argument and the version parsed from the file select a registry entry
-(ocs.registry). An unregistered pair fails closed, an archival-only pair is never a pass, and a
-registered pair is checked by running the component's validator in a subprocess. `ocs` decides
+(cognous_ocs.registry). An unregistered pair fails closed, an archival-only pair is never a pass, and a
+registered pair is checked by running the component's validator in a subprocess. `cognous-ocs` decides
 nothing: a component exit 0 is relayed as a pass that states what it does not prove, anything
 else is relayed as invalid.
 """
@@ -15,10 +15,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from ocs import registry
-from ocs.cli import Outcome
-from ocs.demo import ComponentProblem, installed_commit
-from ocs.envelope import (
+from cognous_ocs import registry
+from cognous_ocs.cli import Outcome
+from cognous_ocs.demo import ComponentProblem, installed_commit
+from cognous_ocs.envelope import (
     ERROR,
     INVALID,
     OCS_ARCHIVAL_ONLY,
@@ -30,9 +30,9 @@ from ocs.envelope import (
     PASS,
     Result,
 )
-from ocs.lock import COMPONENTS
-from ocs.paths import PathRefused, check_input
-from ocs.runner import ComponentRunError, check_pins, run_component
+from cognous_ocs.lock import COMPONENTS
+from cognous_ocs.paths import PathRefused, check_input
+from cognous_ocs.runner import ComponentRunError, check_pins, run_component
 
 MAX_BYTES = 64 * 1024 * 1024
 OUTPUT_IN_RESULT = 4_000
@@ -214,7 +214,7 @@ def run_validate(
             )
         )
     # Component exit 1 (found errors) and 2 (could not load) both mean the artifact was not
-    # accepted: exit 2 for `ocs`. Any other code is not a verdict the component documents.
+    # accepted: exit 2 for `cognous-ocs`. Any other code is not a verdict the component documents.
     if ran.code in (1, 2):
         return Outcome(
             Result(

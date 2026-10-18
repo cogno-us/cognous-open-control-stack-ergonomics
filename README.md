@@ -15,33 +15,33 @@ This repository is the front door to the Open Control Stack: one command to inst
 
 ## Naming
 
-Repository: `cognous-open-control-stack-ergonomics`. Distribution (package) name: `cognous-ocs`. Command: `ocs`, with `cognous-ocs` as an alias console script for the same entry point; the import module is `ocs`. Publication is not authorized; nothing is released from this repository while the stack's publication decision is on HOLD.
+Repository: `cognous-open-control-stack-ergonomics`. Distribution and command: `cognous-ocs` (the only installed command; there is no `ocs` script); Python import module: `cognous_ocs`. Publication is not authorized; nothing is released from this repository while the stack's publication decision is on HOLD.
 
 ## Quick start
 
 ```
 python -m venv .venv && . .venv/bin/activate
 pip install ".[stack]"     # the four components; the control plane is pinned ahead of the hub lock (docs/demo.md)
-ocs --version                # `cognous-ocs --version` prints the same
-ocs demo customer-service --out demo-out   # offline; exit 0 only if the blocked email send is evidenced
-ocs evidence render demo-out/outputs/evidence-pack.json --out view.html
+cognous-ocs --version
+cognous-ocs demo customer-service --out demo-out   # offline; exit 0 only if the blocked email send is evidenced
+cognous-ocs evidence render demo-out/outputs/evidence-pack.json --out view.html
 ```
 
-The distribution is `cognous-ocs` (what `pip list` shows; wheel `cognous_ocs-<version>-py3-none-any.whl`); `ocs` and `cognous-ocs` are both console scripts for the same entry point. The `stack` extra uses direct git references, so it is for installing from this repository, not for an index upload.
+The distribution is `cognous-ocs` (what `pip list` shows; wheel `cognous_ocs-<version>-py3-none-any.whl`); `cognous-ocs` is the only console script. The `stack` extra uses direct git references, so it is for installing from this repository, not for an index upload.
 
 ## Contents
 
-- [`src/ocs/`](src/ocs): the package. `ocs.lock` holds the component pins; `ocs/fixtures/customer-service/` holds the bundled example and its `provenance.json`.
+- [`src/cognous_ocs/`](src/cognous_ocs): the package. `cognous_ocs.lock` holds the component pins; `cognous_ocs/fixtures/customer-service/` holds the bundled example and its `provenance.json`.
 - [`docs/cli-contract.md`](docs/cli-contract.md): command set, exit codes, JSON result envelope, diagnostics file, reason-code naming. This is the Phase 0 deliverable.
 - [`docs/demo.md`](docs/demo.md): the offline customer-service demo, its steps, exit codes and limits.
-- [`docs/validate.md`](docs/validate.md): `ocs validate`, the (kind, version) registry, exit mapping and what a pass does not prove.
+- [`docs/validate.md`](docs/validate.md): `cognous-ocs validate`, the (kind, version) registry, exit mapping and what a pass does not prove.
 - [`docs/init-doctor.md`](docs/init-doctor.md): the workflow scaffold and the read-only setup diagnosis.
 - [`docs/development.md`](docs/development.md): `make check`, `make release-check`, the claim-boundary check and the opt-in pre-push hook.
 - [`docs/testing.md`](docs/testing.md): test defaults (network off, coverage floor, strict types) and the lock per extra.
-- [`docs/schemas.md`](docs/schemas.md): `ocs schema export` and the schema snapshots for the result envelope and diagnostics file.
-- [`docs/action.md`](docs/action.md): the composite GitHub Action, `ocs ci`, and what the action guarantees.
-- [`docs/evidence-render.md`](docs/evidence-render.md): what `ocs evidence render` shows and what it does not prove.
-- [`docs/dashboard.md`](docs/dashboard.md): `ocs dashboard`, a read-only static HTML reading of verification reports, mutation reports, packs and run records.
+- [`docs/schemas.md`](docs/schemas.md): `cognous-ocs schema export` and the schema snapshots for the result envelope and diagnostics file.
+- [`docs/action.md`](docs/action.md): the composite GitHub Action, `cognous-ocs ci`, and what the action guarantees.
+- [`docs/evidence-render.md`](docs/evidence-render.md): what `cognous-ocs evidence render` shows and what it does not prove.
+- [`docs/dashboard.md`](docs/dashboard.md): `cognous-ocs dashboard`, a read-only static HTML reading of verification reports, mutation reports, packs and run records.
 
 ## Phases
 

@@ -1,7 +1,7 @@
 """Clean-virtualenv install smoke test.
 
 Installs the built wheel (with the pinned `stack` extra, which needs network at install time
-only) into a fresh venv, then runs `ocs --version` (and the `cognous-ocs` alias, which must print the same) and the customer-service demo with the
+only) into a fresh venv, then runs `cognous-ocs --version` (no `ocs` script may exist) and the customer-service demo with the
 network namespace removed (`unshare -n`). Exit 0 within the time limit and a blocked send in
 the rendered HTML are required. If no network-namespace tool works the smoke test FAILS;
 set OCS_SMOKE_ALLOW_NO_NETNS=1 to run without isolation (never in CI).
@@ -63,21 +63,20 @@ def main(argv: list[str] | None = None) -> int:
         if done.returncode != 0:
             print(f"smoke: setup failed: {' '.join(cmd[:4])}\n{done.stderr[-2000:]}")
             return 1
-    ocs = str(venv / "bin" / "ocs")
-    version = run([ocs, "--version"])
-    if version.returncode != 0 or not version.stdout.startswith("ocs "):
-        print("smoke: `ocs --version` failed")
+    ocs = str(venv / "bin" / "cognous-ocs")
+    if (venv / "bin" / "ocs").exists():
+        print("smoke: an `ocs` script was installed; the only command is cognous-ocs")
         return 1
-    alias = run([str(venv / "bin" / "cognous-ocs"), "--version"])
-    if alias.returncode != 0 or alias.stdout != version.stdout:
-        print("smoke: `cognous-ocs --version` differs from `ocs --version`")
+    version = run([ocs, "--version"])
+    if version.returncode != 0 or not version.stdout.startswith("cognous-ocs "):
+        print("smoke: `cognous-ocs --version` failed")
         return 1
     schemas_out = work / "schemas"
     if schemas_out.exists():
         shutil.rmtree(schemas_out)
     exported = run([ocs, "schema", "export", "--out", str(schemas_out)])
     if exported.returncode != 0 or not (schemas_out / "v1" / "envelope.schema.json").is_file():
-        print(f"smoke: `ocs schema export` from the wheel failed\n{exported.stdout[-800:]}")
+        print(f"smoke: `cognous-ocs schema export` from the wheel failed\n{exported.stdout[-800:]}")
         return 1
     prefix = netns_prefix()
     if prefix is None:

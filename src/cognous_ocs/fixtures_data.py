@@ -7,7 +7,7 @@ import json
 from importlib.resources import files
 from typing import Any
 
-from ocs import EXAMPLE_NAME
+from cognous_ocs import EXAMPLE_NAME
 
 FIXTURE_FILES = ("manifest.json", "run-record.json", "replay-bundle.json", "evidence-pack.json")
 # Inputs of the demo's real control step (`acp run`), under acp-run/. Provenance records their
@@ -28,7 +28,7 @@ class FixtureIntegrityError(Exception):
 
 
 def _root() -> Any:
-    return files("ocs").joinpath("fixtures", EXAMPLE_NAME)
+    return files("cognous_ocs").joinpath("fixtures", EXAMPLE_NAME)
 
 
 def provenance() -> dict[str, Any]:

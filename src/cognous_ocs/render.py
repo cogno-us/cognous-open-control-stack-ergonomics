@@ -1,4 +1,4 @@
-"""`ocs evidence render`: one self-contained HTML view of an evidence pack.
+"""`cognous-ocs evidence render`: one self-contained HTML view of an evidence pack.
 
 The page has inline CSS and no scripts, fonts, images or links. Every value taken from the
 pack is stripped of control characters and HTML-escaped. The view shows what the pack says;
@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ocs import __version__
-from ocs.envelope import strip_controls
+from cognous_ocs import __version__
+from cognous_ocs.envelope import strip_controls
 
 MAX_PACK_BYTES = 5_000_000
 REGISTERED_PACK_VERSIONS = frozenset({"0.1"})
@@ -47,7 +47,7 @@ class Pack:
 
 def load_pack(path: Path) -> Pack:
     """Read and structurally check a pack. Fails closed on an unregistered version."""
-    from ocs.envelope import OCS_INPUT_INVALID, OCS_KIND_UNREGISTERED
+    from cognous_ocs.envelope import OCS_INPUT_INVALID, OCS_KIND_UNREGISTERED
 
     if path.stat().st_size > MAX_PACK_BYTES:
         raise RenderRefused(OCS_INPUT_INVALID, "evidence pack is larger than the 5 MB limit")
@@ -231,7 +231,7 @@ def render_html(pack: dict[str, Any]) -> str:
 <h2>What this view does not prove</h2>
 <div class="boundary"><ul>{boundary}</ul></div>
 
-<footer>Rendered by ocs {_e(__version__)} from the pack as given. Offline, self-contained, no scripts. This page relays what the pack records and decides nothing.</footer>
+<footer>Rendered by cognous-ocs {_e(__version__)} from the pack as given. Offline, self-contained, no scripts. This page relays what the pack records and decides nothing.</footer>
 </main>
 </body>
 </html>

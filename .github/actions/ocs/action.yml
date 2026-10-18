@@ -1,6 +1,6 @@
-name: ocs
+name: cognous-ocs
 description: >-
-  Run ocs ci on a workflow in CI: validate the declared artifacts through the pinned component
+  Run cognous-ocs ci on a workflow in CI: validate the declared artifacts through the pinned component
   validators, write reports and diagnostics, and upload a minimal set by default. It relays
   component verdicts and decides nothing. Version-bound, fail-closed, path-confined.
 inputs:
@@ -9,7 +9,7 @@ inputs:
     required: false
     default: ''
   workflow:
-    description: Workflow directory (see ocs init workflow) to check and validate.
+    description: Workflow directory (see cognous-ocs init workflow) to check and validate.
     required: false
     default: ''
   evidence-pack:
@@ -52,14 +52,14 @@ inputs:
     default: ocs-reports
   install:
     description: >-
-      'source' installs the ocs in this action's own checkout with the pinned component extra.
-      'preinstalled' uses the ocs already on PATH. Either way the installed version must equal
+      'source' installs the cognous-ocs in this action's own checkout with the pinned component extra.
+      'preinstalled' uses the cognous-ocs already on PATH. Either way the installed version must equal
       the version this action was released with, or the run exits 2.
     required: false
     default: source
 outputs:
   exit-code:
-    description: The exit code of ocs ci (0 to 4). The action step itself exits with it.
+    description: The exit code of cognous-ocs ci (0 to 4). The action step itself exits with it.
     value: ${{ steps.run.outputs.exit-code }}
   out-dir:
     description: The confined absolute output directory.
@@ -90,9 +90,9 @@ runs:
       shell: bash
       run: |
         root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
-        python3 -m venv "$RUNNER_TEMP/ocs-action-venv"
-        "$RUNNER_TEMP/ocs-action-venv/bin/python" -m pip install --quiet "$root[stack]"
-        echo "OCS_ACTION_BIN=$RUNNER_TEMP/ocs-action-venv/bin/ocs" >> "$GITHUB_ENV"
+        python3 -m venv "$RUNNER_TEMP/cognous-ocs-action-venv"
+        "$RUNNER_TEMP/cognous-ocs-action-venv/bin/python" -m pip install --quiet "$root[stack]"
+        echo "OCS_ACTION_BIN=$RUNNER_TEMP/cognous-ocs-action-venv/bin/cognous-ocs" >> "$GITHUB_ENV"
 
     - id: run
       shell: bash
@@ -107,7 +107,7 @@ runs:
         OCS_UPLOAD_FULL: ${{ steps.confine.outputs.upload-full }}
       run: |
         set +e
-        bin="${OCS_ACTION_BIN:-ocs}"
+        bin="${OCS_ACTION_BIN:-cognous-ocs}"
         expected="$(tr -d '\r\n' < "$GITHUB_ACTION_PATH/release-version.txt")"
         args=(ci --out "$OCS_OUT_DIR" --report-mode "$OCS_REPORT_MODE" --expect-version "$expected")
         [ -n "$OCS_MANIFEST" ] && args+=(--manifest "$OCS_MANIFEST")

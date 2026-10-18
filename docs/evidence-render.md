@@ -1,6 +1,6 @@
 # Evidence render: what it shows and what it does not prove
 
-`ocs evidence render PATH --out FILE` reads one evidence pack (JSON, pack version `0.1`) and writes one self-contained HTML file.
+`cognous-ocs evidence render PATH --out FILE` reads one evidence pack (JSON, pack version `0.1`) and writes one self-contained HTML file.
 
 ## What it does
 

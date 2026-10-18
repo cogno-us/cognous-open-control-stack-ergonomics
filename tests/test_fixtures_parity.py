@@ -10,11 +10,11 @@ from typing import Any
 
 import pytest
 
-from ocs import fixtures_data as fx
+from cognous_ocs import fixtures_data as fx
 
 
 def _derive() -> Any:
-    """tools/derive_fixtures.py (needs only the standard library and ocs.lock to build inputs)."""
+    """tools/derive_fixtures.py (needs only the standard library and cognous_ocs.lock to build inputs)."""
     path = Path(__file__).resolve().parents[1] / "tools" / "derive_fixtures.py"
     spec = importlib.util.spec_from_file_location("derive_fixtures", path)
     assert spec is not None and spec.loader is not None
@@ -44,7 +44,7 @@ def test_derived_fixtures_differ_from_source_and_say_so() -> None:
 
 
 def test_provenance_records_hub_and_pins() -> None:
-    from ocs.lock import COMPONENTS
+    from cognous_ocs.lock import COMPONENTS
 
     prov = fx.provenance()
     assert len(prov["hub"]["commit"]) == 40
@@ -107,7 +107,7 @@ def test_acp_run_inputs_regenerate_byte_for_byte() -> None:
 
 
 def test_control_plane_pin_records_the_gap_to_the_hub_lock() -> None:
-    from ocs.lock import COMPONENTS
+    from cognous_ocs.lock import COMPONENTS
 
     pin = fx.provenance()["control_plane_pin"]
     assert pin["pinned_commit"] == COMPONENTS["acp"].sha

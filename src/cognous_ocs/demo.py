@@ -1,7 +1,7 @@
-"""`ocs demo customer-service`: the bundled example, run end to end, offline.
+"""`cognous-ocs demo customer-service`: the bundled example, run end to end, offline.
 
 Every layer is run by the real component command in a subprocess: declare (aam), control
-(`acp run`, then `acp validate-run` on what it wrote), replay (arb) and evidence (agep). `ocs`
+(`acp run`, then `acp validate-run` on what it wrote), replay (arb) and evidence (agep). `cognous-ocs`
 never imports component code. It asserts each exit code, reads the artifacts the components
 produced, and succeeds only if the blocked email send is evidenced in every layer. It decides
 nothing itself: the held send is `acp run` exit 1, which the demo maps to its expectation, and the
@@ -22,9 +22,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ocs import EXAMPLE_NAME, bind, render
-from ocs.cli import Outcome
-from ocs.envelope import (
+from cognous_ocs import EXAMPLE_NAME, bind, render
+from cognous_ocs.cli import Outcome
+from cognous_ocs.envelope import (
     ERROR,
     FAIL,
     INVALID,
@@ -38,14 +38,14 @@ from ocs.envelope import (
     strip_controls,
     write_diagnostics,
 )
-from ocs.fixtures_data import (
+from cognous_ocs.fixtures_data import (
     ACP_RUN_FILES,
     FixtureIntegrityError,
     read_acp_run_input,
     read_fixture,
 )
-from ocs.lock import COMPONENTS
-from ocs.paths import PathRefused, confine_output
+from cognous_ocs.lock import COMPONENTS
+from cognous_ocs.paths import PathRefused, confine_output
 
 MARKER = ".ocs-demo-output"
 # Public, intentionally not secret: the replay signature in this demo proves nothing about a producer.
@@ -71,7 +71,7 @@ DOES_NOT_PROVE = [
     "that run-record.json is more than a projection of the control plane's native "
     "bounded-run-record.json",
     "that the replay bundle and evidence pack were produced by the control plane: they are "
-    "synthetic templates that ocs re-keyed to the ids and reason codes of the real runs",
+    "synthetic templates that cognous-ocs re-keyed to the ids and reason codes of the real runs",
     "that any real agent action was blocked, or that real customer data was involved",
     "producer authenticity: the replay signature uses a public demo-only key",
     "external source linkage",
@@ -225,7 +225,7 @@ def _prepare_out(out: Path, *, clean: bool) -> None:
                 )
             if not (out / MARKER).is_file():
                 raise PathRefused(
-                    "--clean only replaces a directory created by a previous ocs demo (marker missing)"
+                    "--clean only replaces a directory created by a previous cognous-ocs demo (marker missing)"
                 )
             for entry in entries:
                 if entry.is_symlink() or entry.is_file():
@@ -234,7 +234,7 @@ def _prepare_out(out: Path, *, clean: bool) -> None:
                     shutil.rmtree(entry)
     out.mkdir(parents=True, exist_ok=True)
     (out / MARKER).write_text(
-        "created by ocs demo; --clean may replace this directory\n", encoding="utf-8"
+        "created by cognous-ocs demo; --clean may replace this directory\n", encoding="utf-8"
     )
     for sub in ("inputs", "outputs", "logs", "control"):
         (out / sub).mkdir()
