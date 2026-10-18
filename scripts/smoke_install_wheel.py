@@ -68,6 +68,13 @@ def main(argv: list[str] | None = None) -> int:
     if version.returncode != 0 or not version.stdout.startswith("ocs "):
         print("smoke: `ocs --version` failed")
         return 1
+    schemas_out = work / "schemas"
+    if schemas_out.exists():
+        shutil.rmtree(schemas_out)
+    exported = run([ocs, "schema", "export", "--out", str(schemas_out)])
+    if exported.returncode != 0 or not (schemas_out / "v1" / "envelope.schema.json").is_file():
+        print(f"smoke: `ocs schema export` from the wheel failed\n{exported.stdout[-800:]}")
+        return 1
     prefix = netns_prefix()
     if prefix is None:
         if os.environ.get("OCS_SMOKE_ALLOW_NO_NETNS") != "1":

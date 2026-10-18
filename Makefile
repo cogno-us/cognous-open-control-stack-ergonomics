@@ -4,12 +4,12 @@
 PY ?= python
 DIST ?= dist
 
-.PHONY: check lint type lock tests docs claims examples build release-check wheel-check smoke \
+.PHONY: check lint type lock tests docs claims examples schemas build release-check wheel-check smoke \
         release-publish-check pre-push clean
 
 # Fixed order: lint, type, lock freshness, tests (network off, coverage floor), docs alignment,
-# claim boundary, examples parity, build.
-check: lint type lock tests docs claims examples build
+# claim boundary, examples parity, schema snapshots, build.
+check: lint type lock tests docs claims examples schemas build
 
 lint:
 	ruff check .
@@ -33,6 +33,10 @@ claims:
 
 examples:
 	$(PY) scripts/check_examples_parity.py
+
+# Recorded snapshot hashes, and byte-equality with every v* release marker once any exists.
+schemas:
+	$(PY) scripts/check_schema_snapshots.py
 
 build:
 	rm -rf $(DIST)

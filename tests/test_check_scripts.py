@@ -138,6 +138,7 @@ def make_wheel(path: Path, extra: dict[str, str] | None = None, drop: str | None
     members["ocs-0.dist-info/METADATA"] = (
         "Name: ocs\nProvides-Extra: stack\nRequires-Dist: agent-x; extra == 'stack'\n"
     )
+    members["ocs/schema_resources/v1/envelope.schema.json"] = "{}"
     members.update(extra or {})
     with zipfile.ZipFile(path, "w") as zf:
         for name, body in members.items():
@@ -233,5 +234,6 @@ def test_makefile_order_and_no_publish_command() -> None:
         "docs",
         "claims",
         "examples",
+        "schemas",
         "build",
     ]

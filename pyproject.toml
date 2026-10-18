@@ -39,6 +39,8 @@ dev = [
     "mypy>=1.10",
     "ruff>=0.5",
     "build>=1.2",
+    "jsonschema>=4.20",
+    "types-jsonschema>=4.20",
     "hatchling>=1.25",
 ]
 
@@ -51,8 +53,12 @@ allow-direct-references = true
 [tool.hatch.build.targets.wheel]
 packages = ["src/ocs"]
 
+# The frozen schema snapshots ship as package data under ocs/schema_resources/.
+[tool.hatch.build.targets.wheel.force-include]
+"schemas" = "ocs/schema_resources"
+
 [tool.hatch.build.targets.sdist]
-include = ["src/ocs", "tests", "docs", "scripts", ".githooks", "Makefile", "release-state.json", "README.md", "LICENSE", "pyproject.toml"]
+include = ["src/ocs", "tests", "docs", "scripts", ".githooks", "Makefile", "release-state.json", "schemas", ".gitattributes", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

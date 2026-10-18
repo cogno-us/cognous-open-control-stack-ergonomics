@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ocs:schema:diagnostics:1",
+  "title": "ocs ci-diagnostics.json, envelope_version 1",
+  "description": "Written on any nonzero exit when a diagnostics location is declared (docs/cli-contract.md section 5). It holds no artifact content, no secrets and no paths outside the workspace.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["envelope_version", "outcome", "exit_code", "reason_codes", "report_paths"],
+  "properties": {
+    "envelope_version": {"const": "1"},
+    "outcome": {"enum": ["review", "not_evaluated", "fail", "invalid", "error"]},
+    "exit_code": {"type": "integer", "minimum": 1, "maximum": 4},
+    "reason_codes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "report_paths": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {"properties": {"outcome": {"const": "review"}, "exit_code": {"const": 1}}},
+        {"properties": {"outcome": {"const": "fail"}, "exit_code": {"const": 1}}},
+        {"properties": {"outcome": {"const": "invalid"}, "exit_code": {"const": 2}}},
+        {"properties": {"outcome": {"const": "not_evaluated"}, "exit_code": {"const": 3}}},
+        {"properties": {"outcome": {"const": "error"}, "exit_code": {"const": 4}}}
+      ]
+    }
+  ]
+}
