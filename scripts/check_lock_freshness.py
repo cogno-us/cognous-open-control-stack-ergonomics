@@ -1,7 +1,7 @@
 """Lock freshness: the `stack` extra pins equal cognous_ocs.lock, and any *.lock files agree.
 
-The pins are the hub component-lock commits, except the control plane, which is ahead of
-the hub lock (see provenance.json and docs/demo.md). A stale or edited pin
+The pins are the current component mains, which differ from the hub component-lock commits
+until the hub lock is updated (see provenance.json and docs/demo.md). A stale or edited pin
 fails. Each extra needs requirements/<extra>.txt naming every dependency it declares (regenerate with
 uv, see docs/testing.md); any requirements*.lock file must mention every pinned commit.
 """

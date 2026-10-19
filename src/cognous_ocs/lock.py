@@ -1,10 +1,11 @@
 """The component pins `cognous-ocs` was built against.
 
-These mirror the entries in the hub's component-lock.json at the hub commit recorded in
-fixtures/customer-service/provenance.json, except the control plane: it is pinned to the programme-2
-revision 3cd17ead (the first revision with `acp run` is 83b49b5e), which is ahead of the hub lock
-(docs/demo.md and provenance.json record both). `cognous-ocs` calls each component only through its
-public command; it never imports component internals.
+These are the current main revisions of the four components. They differ from the entries in the
+hub's component-lock.json (at the hub commit recorded in fixtures/customer-service/provenance.json)
+until the hub lock is updated in a later step; the first control-plane revision with `acp run` is
+83b49b5e (docs/demo.md and provenance.json record the pins and the lock values).
+`cognous-ocs` calls each component only through its public command; it never imports component
+internals.
 """
 
 from __future__ import annotations
@@ -30,7 +31,7 @@ COMPONENTS: dict[str, Component] = {
             "declare",
             "action_manifest",
             "cogno-us/cognous-action-manifest",
-            "46c950bed37fe3812000895430bc0312d29e37ce",
+            "ff5490828b2bf7f6a976da209f3f533701855687",
             "agent-action-manifest",
             "aam",
             "action-manifest",
@@ -39,7 +40,7 @@ COMPONENTS: dict[str, Component] = {
             "control",
             "control_plane",
             "cogno-us/cognous-control-plane",
-            "3cd17ead6b24301290ad1e50ae4b22bbd93c12fb",
+            "2bac7875391cad0a431fa0d75208b7ade39743e3",
             "agent-control-plane",
             "acp",
             "run-record",
@@ -48,7 +49,7 @@ COMPONENTS: dict[str, Component] = {
             "replay",
             "replay_bundle",
             "cogno-us/cognous-replay-bundle",
-            "459e4ba62fca49364aebb0050cd5fb2dd5a71bfa",
+            "2a7963b18d96eb2e9e4fdb1a09c7588cf5c0ef00",
             "agent-replay-bundle",
             "arb",
             "replay-bundle",
@@ -57,7 +58,7 @@ COMPONENTS: dict[str, Component] = {
             "evidence",
             "governance_evidence_pack",
             "cogno-us/cognous-governance-evidence-pack",
-            "b4baccd823d2a73be276c1de745b19cf7c56a0d6",
+            "80e24650bb089d3a0cb9c0063c5b4bcc4a436123",
             "agent-governance-evidence-pack",
             "agep",
             "evidence-pack",

@@ -44,6 +44,7 @@ ACP_RUN_MODELLED_ON = (
     "examples/acp_run/held/resolver-state.json",
 )
 ACP_RUN_NOW = "2026-10-05T19:00:00Z"
+ACP_RUN_FIRST_REVISION = "83b49b5e61cdacee916b502cdea775aefc72a064"
 SOURCES = {
     "manifest.json": ("action_manifest", "examples/customer_service_agent.manifest.json"),
     "run-record.json": ("control_plane", "examples/sample_run_record.json"),
@@ -868,7 +869,7 @@ def main() -> int:
             "control_plane": {
                 "repository": by_key["control_plane"].repository,
                 "commit": by_key["control_plane"].sha,
-                "first_revision_with_acp_run": by_key["control_plane"].sha,
+                "first_revision_with_acp_run": ACP_RUN_FIRST_REVISION,
                 "pull_request": "cogno-us/cognous-control-plane#46",
             },
             "modelled_on": {rel: sha256(cp_src / rel) for rel in ACP_RUN_MODELLED_ON},
