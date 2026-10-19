@@ -56,7 +56,7 @@ Verified from a clean checkout in a scratch virtual environment. It needs networ
 git clone https://github.com/cogno-us/cognous-open-control-stack-ergonomics
 cd cognous-open-control-stack-ergonomics
 python -m venv .venv && . .venv/bin/activate
-pip install ".[stack]"     # the four components; the control plane is pinned ahead of the hub lock (see "Pins and the hub lock")
+pip install ".[stack]"     # the four components; the pins are ahead of the hub lock (see "Pins and the hub lock")
 cognous-ocs --version
 cognous-ocs demo customer-service --out demo-out   # offline; exit 0 only if the blocked email send is evidenced
 cognous-ocs evidence render demo-out/outputs/evidence-pack.json --out view.html
@@ -68,10 +68,10 @@ Expected output. `--version` prints the CLI, contract, example and pinned-compon
 cognous-ocs 0.1.0
 cli-contract 0.1.0
 bundled-example customer-service 0.2.0
-bundled-component aam cogno-us/cognous-action-manifest@46c950bed37f
-bundled-component acp cogno-us/cognous-control-plane@3cd17ead6b24
-bundled-component arb cogno-us/cognous-replay-bundle@459e4ba62fca
-bundled-component agep cogno-us/cognous-governance-evidence-pack@b4baccd823d2
+bundled-component aam cogno-us/cognous-action-manifest@ff5490828b2b
+bundled-component acp cogno-us/cognous-control-plane@2bac7875391c
+bundled-component arb cogno-us/cognous-replay-bundle@2a7963b18d96
+bundled-component agep cogno-us/cognous-governance-evidence-pack@80e24650bb08
 ```
 
 `demo` exits 0 and its first lines read:
@@ -123,23 +123,23 @@ Every registered subcommand is in the [CLI contract](docs/cli-contract.md#2-comm
 
 ## Pins and the hub lock
 
-The four component pins are in `src/cognous_ocs/lock.py` and in the `stack` extra. Three equal the hub `component-lock.json`. The control plane is pinned ahead of the hub lock because the demo needs `acp run`, which the lock revision does not have ([demo page](docs/demo.md#pin-note-the-control-plane-is-ahead-of-the-hub-lock)). This is a **known limit**: a reader comparing the two sees a mismatch that is intended and recorded.
+The four component pins are in `src/cognous_ocs/lock.py` and in the `stack` extra. All four are the current mains of their repositories and none equals the hub `component-lock.json` yet: the lock is updated in a later step, until then the table below shows a mismatch that is expected and recorded. The control plane in the lock also lacks `acp run`, which the demo needs ([demo page](docs/demo.md#pin-note-the-pins-are-ahead-of-the-hub-lock)). This is a **known limit**.
 
 <!-- pins-table:start -->
 <!-- Generated from src/cognous_ocs/lock.py and the hub component-lock.json (hub commit dcc9bd7533ef). Refresh at the pin round: rerun the generator and replace this table; do not hand-copy. -->
 
 | Layer | Command | Lock key | Pinned here | Hub lock | Same |
 |---|---|---|---|---|---|
-| declare | `aam` | `action_manifest` | `46c950bed37f` | `46c950bed37f` | yes |
-| control | `acp` | `control_plane` | `3cd17ead6b24` | `d3dadee70bd3` | no (ahead of the lock) |
-| replay | `arb` | `replay_bundle` | `459e4ba62fca` | `459e4ba62fca` | yes |
-| evidence | `agep` | `governance_evidence_pack` | `b4baccd823d2` | `b4baccd823d2` | yes |
+| declare | `aam` | `action_manifest` | `ff5490828b2b` | `46c950bed37f` | no (ahead of the lock) |
+| control | `acp` | `control_plane` | `2bac7875391c` | `d3dadee70bd3` | no (ahead of the lock) |
+| replay | `arb` | `replay_bundle` | `2a7963b18d96` | `459e4ba62fca` | no (ahead of the lock) |
+| evidence | `agep` | `governance_evidence_pack` | `80e24650bb08` | `b4baccd823d2` | no (ahead of the lock) |
 
 <!-- pins-table:end -->
 
 ## Known limits
 
-- **known limit** The control plane pin is ahead of the hub lock (above).
+- **known limit** All four component pins are ahead of the hub lock until the lock is updated (above).
 - **known limit** `demo` runs against a synthetic resolver and a local file destination; a pass is not evidence of an institutional grant or a real-world effect.
 - **known limit** The `stack` extra needs GitHub access (direct git references). Without it the commands fail closed with `OCS_VERSION`.
 - **known limit** `evidence render` and `dashboard` display what they are given and add no verdict; a pass from `validate` means artifact-internal validation by the component, nothing more.
