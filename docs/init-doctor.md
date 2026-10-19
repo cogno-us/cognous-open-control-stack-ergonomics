@@ -25,7 +25,7 @@ Strictly read-only: it never runs the agent or a component, never writes (not ev
 
 | Code | PASS when | Without `--workflow` |
 |---|---|---|
-| `OCS_VERSION` | all four components are installed at the commits pinned in `cognous_ocs.lock` (the pins are ahead of the hub lock, see `docs/demo.md`) | runs |
+| `OCS_VERSION` | all four components are installed at the commits pinned in `cognous_ocs.lock` (the pins equal the hub lock entries, see `docs/demo.md`) | runs |
 | `OCS_MANIFEST` | manifest parses, its version is fully registered, every action has a type, and every non-read action has an authority requirement | SKIP |
 | `OCS_POLICY_BIND` | every manifest action is in exactly one of `allowed_tools` or `blocked_tools` | SKIP |
 | `OCS_PATHS` | the workflow's file references stay inside the directory (no absolute, `..`, symlink, CR/LF/NUL) | SKIP |

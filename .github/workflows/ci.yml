@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (components pinned in cognous_ocs.lock; the control plane is pinned ahead of the hub lock)
+      - name: Install (components pinned in cognous_ocs.lock)
         run: python -m pip install -e ".[dev,stack]"
       - name: make check (lint, types, lock, tests with sockets off, docs, claims, examples, build)
         run: make check

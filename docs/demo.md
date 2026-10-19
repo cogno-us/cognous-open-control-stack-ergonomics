@@ -4,11 +4,11 @@
 cognous-ocs demo customer-service --out DIR [--clean] [--strict]
 ```
 
-Runs the bundled customer-service example end to end, offline, and exits 0 only if the blocked email send is evidenced in every layer. It needs no network and no key. The components are installed with `pip install ".[stack]"`. All four are pinned to the current mains, which differ from the hub's `component-lock.json` until the lock is updated (next section).
+Runs the bundled customer-service example end to end, offline, and exits 0 only if the blocked email send is evidenced in every layer. It needs no network and no key. The components are installed with `pip install ".[stack]"`. All four are pinned to the revisions listed in the hub's `component-lock.json` (next section).
 
-## Pin note: the pins are ahead of the hub lock
+## Pins and the hub lock
 
-The demo's control step runs `acp run`, which first exists in control-plane revision `83b49b5e` (cogno-us/cognous-control-plane#46). The component pins here are the current mains: manifest `ff549082`, control plane `2bac7875`, replay bundle `2a7963b1`, evidence pack `80e24650`. The hub's `component-lock.json` still lists manifest `46c950be`, control plane `d3dadee7` (no `acp run`), replay bundle `459e4ba6` and evidence pack `b4baccd8`. So **all four pins here are ahead of the hub's component-lock**; the lock is updated in a later step, and until then the mismatch is expected. The derived fixture files are byte-identical at the previous and the current pins; only the recorded commits in `provenance.json` changed. Nothing in the hub, the components or the qualification repository was changed for this.
+The demo's control step runs `acp run`, which first exists in control-plane revision `83b49b5e` (cogno-us/cognous-control-plane#46). The component pins here are manifest `ff549082`, control plane `2bac7875`, replay bundle `6a6a4774` and evidence pack `fd030615`; each equals the entry in the hub's `component-lock.json`. The derived fixture files are byte-identical at the previous and the current pins; only the recorded commits in `provenance.json` changed. Nothing in the hub, the components or the qualification repository was changed for this.
 
 It is reversible by repinning: set the four lines of the `stack` extra in `pyproject.toml` and `src/cognous_ocs/lock.py` back to the earlier commits, regenerate `requirements/stack.txt` with the documented `uv` command (see [testing.md](testing.md)), and rerun `tools/derive_fixtures.py`. `provenance.json` records the pins and the lock commit under `control_plane_pin` and `hub`.
 

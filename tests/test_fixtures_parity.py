@@ -106,13 +106,13 @@ def test_acp_run_inputs_regenerate_byte_for_byte() -> None:
         assert text.encode("utf-8") == fx.read_acp_run_input(name)
 
 
-def test_control_plane_pin_records_the_gap_to_the_hub_lock() -> None:
+def test_control_plane_pin_equals_the_hub_lock_entry() -> None:
     from cognous_ocs.lock import COMPONENTS
 
     pin = fx.provenance()["control_plane_pin"]
     assert pin["pinned_commit"] == COMPONENTS["acp"].sha
-    assert pin["hub_component_lock_commit"] != pin["pinned_commit"]
-    assert pin["ahead_of_hub_lock"] is True
+    assert pin["hub_component_lock_commit"] == pin["pinned_commit"]
+    assert pin["ahead_of_hub_lock"] is False
     assert (
         fx.provenance()["hub"]["component_lock_control_plane_sha"]
         == pin["hub_component_lock_commit"]
