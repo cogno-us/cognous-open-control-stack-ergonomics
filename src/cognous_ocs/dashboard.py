@@ -605,10 +605,6 @@ def _legend() -> str:
     return f'<div class="key"><h2>Key to the bar fills</h2><ul class="legend">{items}</ul></div>'
 
 
-def _nonempty(items: list[str]) -> str:
-    return "".join(items)
-
-
 def _checks_section(doc: dict[str, Any], sid: str) -> str:
     checks = doc["checks"]
     if not checks:

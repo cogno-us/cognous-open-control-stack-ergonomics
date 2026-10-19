@@ -62,10 +62,6 @@ def strip_controls(value: object) -> str:
     return "".join(ch for ch in text if unicodedata.category(ch) not in {"Cc", "Zl", "Zp"})
 
 
-def has_crlf(value: str) -> bool:
-    return "\r" in value or "\n" in value
-
-
 @dataclass
 class Result:
     """One run's outcome. `cognous-ocs` adds no verdict of its own: verdict_source names a component."""
