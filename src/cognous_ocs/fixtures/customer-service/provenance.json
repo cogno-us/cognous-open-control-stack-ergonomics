@@ -5,14 +5,14 @@
   "note": "The hub example is narrative only. manifest.json is a byte copy of the component example; the other three are derived from component examples and re-keyed so one synthetic run is consistent across layers; acp-run/ holds the inputs of the real control step. Produced by tools/derive_fixtures.py.",
   "hub": {
     "repository": "cogno-us/cognous-open-control-stack",
-    "commit": "afca5bbdfac1b8a5073b8db9f1f108243e14d451",
+    "commit": "ddb5c95b63b9d3c011552d66c2e9813692e14b2c",
     "example_path": "examples/customer-service-end-to-end",
     "example_files": {
       "README.md": "71ee91bc3b574849354694b6624c4dc2e7c1aba6648103a5c878a23ecf9d010e",
       "artifact-map.md": "71fa582e760739b3231e6061d7cde1db43de6eb9d52cf4f840fb904e3f875c6d"
     },
-    "component_lock_sha256": "dc66aafeb15eb2d5695b2217019775a1a2e517b3a6ab55b07c1b37349d8ee5cc",
-    "component_lock_control_plane_sha": "d3dadee70bd319812b207389ab1e0f6efe511916"
+    "component_lock_sha256": "ea657b36b930f591af4cf310b0943e8de18b4f6ca15f9b67ed2dc63a280379a0",
+    "component_lock_control_plane_sha": "2bac7875391cad0a431fa0d75208b7ade39743e3"
   },
   "sources": {
     "manifest.json": {
@@ -32,14 +32,14 @@
     "replay-bundle.json": {
       "component": "replay_bundle",
       "repository": "cogno-us/cognous-replay-bundle",
-      "commit": "2a7963b18d96eb2e9e4fdb1a09c7588cf5c0ef00",
+      "commit": "6a6a477495ac24e813f12bb0fe314acfe8bac9cf",
       "path": "examples/customer_service_replay_bundle.json",
       "sha256": "47a59f516d3076c547f75b927da60565e0306002c181abc658375e992de0c880"
     },
     "evidence-pack.json": {
       "component": "governance_evidence_pack",
       "repository": "cogno-us/cognous-governance-evidence-pack",
-      "commit": "80e24650bb089d3a0cb9c0063c5b4bcc4a436123",
+      "commit": "fd030615a782a064b89c57e8e40d7f220f99ff9e",
       "path": "examples/customer_service_agent_evidence_pack.json",
       "sha256": "79de2641b98e2622dd67d3c8027c527678d1c3effdd1992aee85ac6565ec7f41"
     }
@@ -82,9 +82,9 @@
     }
   },
   "control_plane_pin": {
-    "hub_component_lock_commit": "d3dadee70bd319812b207389ab1e0f6efe511916",
+    "hub_component_lock_commit": "2bac7875391cad0a431fa0d75208b7ade39743e3",
     "pinned_commit": "2bac7875391cad0a431fa0d75208b7ade39743e3",
-    "ahead_of_hub_lock": true,
-    "reason": "acp run (cogno-us/cognous-control-plane#46) first exists at the pinned commit. The other three components stay at the hub lock."
+    "ahead_of_hub_lock": false,
+    "reason": "acp run (cogno-us/cognous-control-plane#46) exists at the pinned commit, which is the revision the hub lock lists for the control plane."
   }
 }

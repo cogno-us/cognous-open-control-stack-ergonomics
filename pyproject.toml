@@ -22,17 +22,16 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-# The four components, at the current mains. All four differ from the commits in the hub's
-# component-lock.json until the hub lock is updated in a later step (see docs/demo.md; the pins
-# and the lock values are recorded in
+# The four components, at the revisions listed in the hub's component-lock.json (see docs/demo.md;
+# the pins are recorded in
 # src/cognous_ocs/fixtures/customer-service/provenance.json). Direct
 # references: this extra is for installing from this repository, not for an
 # index upload. Nothing is published from this repository.
 stack = [
     "agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@ff5490828b2bf7f6a976da209f3f533701855687",
     "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@2bac7875391cad0a431fa0d75208b7ade39743e3",
-    "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@2a7963b18d96eb2e9e4fdb1a09c7588cf5c0ef00",
-    "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@80e24650bb089d3a0cb9c0063c5b4bcc4a436123",
+    "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@6a6a477495ac24e813f12bb0fe314acfe8bac9cf",
+    "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@fd030615a782a064b89c57e8e40d7f220f99ff9e",
 ]
 dev = [
     "pytest>=8",

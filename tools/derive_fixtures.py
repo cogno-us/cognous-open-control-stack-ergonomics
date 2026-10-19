@@ -33,7 +33,7 @@ from cognous_ocs.lock import COMPONENTS  # noqa: E402
 
 EXAMPLE_VERSION = "0.2.0"
 # The first control-plane revision with `acp run` is cogno-us/cognous-control-plane#46. The hub's
-# component-lock still pins an older control-plane revision; cognous-ocs is deliberately ahead of it.
+# component-lock pins a control-plane revision that includes it.
 ACP_RUN_MODELLED_ON = (
     "examples/acp_run/manifest.json",
     "examples/acp_run/authorized/proposal.json",
@@ -881,8 +881,8 @@ def main() -> int:
             "pinned_commit": by_key["control_plane"].sha,
             "ahead_of_hub_lock": by_key["control_plane"].sha != hub_lock_cp,
             "reason": (
-                "acp run (cogno-us/cognous-control-plane#46) first exists at the pinned "
-                "commit. The other three components stay at the hub lock."
+                "acp run (cogno-us/cognous-control-plane#46) exists at the pinned commit, "
+                "which is the revision the hub lock lists for the control plane."
             ),
         },
     }

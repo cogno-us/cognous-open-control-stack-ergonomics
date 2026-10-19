@@ -1,9 +1,9 @@
 """The component pins `cognous-ocs` was built against.
 
-These are the current main revisions of the four components. They differ from the entries in the
-hub's component-lock.json (at the hub commit recorded in fixtures/customer-service/provenance.json)
-until the hub lock is updated in a later step; the first control-plane revision with `acp run` is
-83b49b5e (docs/demo.md and provenance.json record the pins and the lock values).
+These are the revisions of the four components listed in the hub's component-lock.json (the hub
+commit the fixtures were derived from is recorded in fixtures/customer-service/provenance.json);
+the first control-plane revision with `acp run` is 83b49b5e (docs/demo.md and provenance.json
+record the pins).
 `cognous-ocs` calls each component only through its public command; it never imports component
 internals.
 """
@@ -49,7 +49,7 @@ COMPONENTS: dict[str, Component] = {
             "replay",
             "replay_bundle",
             "cogno-us/cognous-replay-bundle",
-            "2a7963b18d96eb2e9e4fdb1a09c7588cf5c0ef00",
+            "6a6a477495ac24e813f12bb0fe314acfe8bac9cf",
             "agent-replay-bundle",
             "arb",
             "replay-bundle",
@@ -58,7 +58,7 @@ COMPONENTS: dict[str, Component] = {
             "evidence",
             "governance_evidence_pack",
             "cogno-us/cognous-governance-evidence-pack",
-            "80e24650bb089d3a0cb9c0063c5b4bcc4a436123",
+            "fd030615a782a064b89c57e8e40d7f220f99ff9e",
             "agent-governance-evidence-pack",
             "agep",
             "evidence-pack",
