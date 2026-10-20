@@ -8,9 +8,9 @@ Runs the bundled customer-service example end to end, offline, and exits 0 only 
 
 ## Pins and the hub lock
 
-The demo's control step runs `acp run`, which first exists in control-plane revision `83b49b5e` (cogno-us/cognous-control-plane#46). The component pins here are manifest `ff549082`, control plane `2bac7875`, replay bundle `6a6a4774` and evidence pack `fd030615`; each equals the entry in the hub's `component-lock.json`. The derived fixture files are byte-identical at the previous and the current pins; only the recorded commits in `provenance.json` changed. Nothing in the hub, the components or the qualification repository was changed for this.
+The demo's control step runs `acp run`, which first exists in control-plane revision `83b49b5e` (cogno-us/cognous-control-plane#46). The four component pins are in `src/cognous_ocs/lock.py` and the `stack` extra, and each equals the entry in the hub's `component-lock.json`: see the hub lock for the revisions, and the [README pins table](../README.md#pins-and-the-hub-lock) for the comparison. This page does not repeat them.
 
-It is reversible by repinning: set the four lines of the `stack` extra in `pyproject.toml` and `src/cognous_ocs/lock.py` back to the earlier commits, regenerate `requirements/stack.txt` with the documented `uv` command (see [testing.md](testing.md)), and rerun `tools/derive_fixtures.py`. `provenance.json` records the pins and the lock commit under `control_plane_pin` and `hub`.
+It is reversible by repinning: set the four lines of the `stack` extra in `pyproject.toml` and `src/cognous_ocs/lock.py` to other commits, regenerate `requirements/stack.txt` with the documented `uv` command (see [testing.md](testing.md)), and rerun `tools/derive_fixtures.py`. `provenance.json` records the pins and the lock commit under `control_plane_pin` and `hub`.
 
 ## What runs
 
