@@ -165,6 +165,59 @@ def test_json_mode_wraps_the_run_in_the_envelope(
         assert body["does_not_prove"]
 
 
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["manifest", "--help"],
+        ["manifest", "-h"],
+        ["manifest", "--version"],
+        ["manifest", "validate", "--help"],
+        ["replay", "verify", "--version"],
+        ["manifest", "nosuchsubcommand"],
+        ["manifest", "list-actions", "m.json"],
+        ["evidence", "summarize", "p.json"],
+        ["replay", "sign", "b.json", "--secret", "k"],
+        ["manifest", "verify", "m.json"],
+    ],
+)
+def test_json_mode_exit_0_without_a_validating_subcommand_is_not_a_pass(
+    fake: Callable[..., Path], capsys: pytest.CaptureFixture[str], argv: list[str]
+) -> None:
+    fake(0)
+    assert main(["--format", "json", *argv]) == 3
+    body = json.loads(capsys.readouterr().out)
+    assert (body["outcome"], body["exit_code"]) == ("not_evaluated", 3)
+    assert body["reason_codes"] == ["OCS_NOT_APPLICABLE"]
+    assert "verdict_source" not in body and not body.get("does_not_prove")
+    assert body["extensions"]["x-component-exit"] == 0
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["manifest", "validate", "m.json"],
+        ["replay", "validate", "b.json"],
+        ["replay", "verify", "b.json", "--secret", "k"],
+        ["evidence", "validate", "p.json"],
+    ],
+)
+def test_json_mode_exit_0_from_a_validating_subcommand_is_still_a_pass(
+    fake: Callable[..., Path], capsys: pytest.CaptureFixture[str], argv: list[str]
+) -> None:
+    fake(0)
+    assert main(["--format", "json", *argv]) == 0
+    body = json.loads(capsys.readouterr().out)
+    assert body["outcome"] == "pass" and body["does_not_prove"] and body["verdict_source"]
+
+
+def test_text_mode_still_relays_exit_0_for_any_subcommand(
+    fake: Callable[..., Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    fake(0)
+    assert main(["manifest", "--help"]) == 0
+    assert capsys.readouterr().out == "out: --help\n"
+
+
 def test_the_label_never_carries_arguments(
     fake: Callable[..., Path], capsys: pytest.CaptureFixture[str]
 ) -> None:

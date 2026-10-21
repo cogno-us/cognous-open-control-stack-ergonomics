@@ -54,6 +54,19 @@ EXIT_MAP = {
 }
 
 
+# The component subcommands whose exit 0 is a validation verdict (the public validators the
+# registry also drives, plus `arb verify`, which checks a signed bundle). Any other invocation
+# (help, version, list, summarize, sign, an unknown subcommand) exiting 0 only says the command
+# ran, so under `--format json` it is `not_evaluated`, never `pass`. Text mode relays the component's
+# exit code as it is (`cognous-ocs manifest --help` still exits 0) and carries no envelope.
+VERDICT_SUBCOMMANDS = {
+    "aam": frozenset({"validate"}),
+    "arb": frozenset({"validate", "verify"}),
+    "agep": frozenset({"validate"}),
+}
+INFO_FLAGS = frozenset({"--help", "-h", "--version", "-V"})
+
+
 @dataclass(frozen=True)
 class Passthrough:
     layer: str
@@ -84,6 +97,13 @@ def detect(argv: list[str]) -> Passthrough | None:
     if layer == "evidence" and (not rest or rest[0].startswith("-") or rest[0] == "render"):
         return None  # `cognous-ocs evidence render ...` and bare `cognous-ocs evidence` stay with cognous-ocs
     return Passthrough(layer, LAYERS[layer], rest, fmt)
+
+
+def is_verdict_invocation(pt: Passthrough) -> bool:
+    """True only for a documented validating subcommand with no help or version flag."""
+    if not pt.rest or pt.rest[0].startswith("-") or any(a in INFO_FLAGS for a in pt.rest):
+        return False
+    return pt.rest[0] in VERDICT_SUBCOMMANDS.get(pt.command, frozenset())
 
 
 def _label(pt: Passthrough) -> str:
@@ -136,6 +156,21 @@ def execute(
         "x-component-exit": ran.code,
         "x-component-output": _text(ran.text)[:OUTPUT_IN_RESULT],
     }
+    if ran.code == 0 and pt.fmt == "json" and not is_verdict_invocation(pt):
+        return (
+            Result(
+                label,
+                NOT_EVALUATED,
+                [OCS_NOT_APPLICABLE],
+                subject,
+                messages=[
+                    f"{pt.command} exited 0, but this invocation is not a documented validating "
+                    "subcommand: it carries no verdict"
+                ],
+                extensions=extensions,
+            ),
+            relayed,
+        )
     if ran.code == 0:
         return (
             Result(
