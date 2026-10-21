@@ -47,32 +47,68 @@ def check_requirement_locks(root: Path, extras: dict[str, list[str]]) -> list[st
 GIT_PIN = re.compile(
     r"([A-Za-z0-9][A-Za-z0-9._-]*) @ git\+https://github\.com/(cogno-us/[A-Za-z0-9._-]+)@([0-9a-f]{40})"
 )
-_REFERENCE_LIKE = re.compile(r"^(?:[A-Za-z0-9][A-Za-z0-9._-]*\s*@|-|git\+)|git\+|\s@\s")
+_INDEXED_PIN = re.compile(
+    r"[A-Za-z0-9][A-Za-z0-9._-]*==[A-Za-z0-9._+!]+(?:\s+--hash=sha256:[0-9a-f]{64})*\s*"
+)
+_COMMENT = re.compile(r"\s*#")
+
+
+def _logical_lines(text: str) -> list[tuple[int, str, bool]]:
+    """Join backslash continuations as pip does: (first line number, logical text, ends_open).
+
+    A comment line is never joined and ends a pending continuation; a continuation that reaches
+    a comment line or the end of the file is reported open so the caller refuses it.
+    """
+    out: list[tuple[int, str, bool]] = []
+    parts: list[str] = []
+    first = 0
+    for number, line in enumerate(text.splitlines(), 1):
+        if _COMMENT.match(line):
+            if parts:
+                out.append((first, "".join(parts), True))
+                parts = []
+            out.append((number, line, False))
+        elif line.endswith("\\"):
+            if not parts:
+                first = number
+            parts.append(line.strip("\\"))
+        elif parts:
+            parts.append(line)
+            out.append((first, "".join(parts), False))
+            parts = []
+        else:
+            out.append((number, line, False))
+    if parts:
+        out.append((first, "".join(parts), True))
+    return out
 
 
 def check_stack_requirements(root: Path, want: dict[str, tuple[str, str]]) -> list[str]:
     """requirements/stack.txt carries exactly the lock's git pins, one strict line each.
 
-    A direct-reference line must be exactly `<dist> @ git+https://github.com/cogno-us/<repo>@<40 lowercase hex>`:
-    no markers, fragments, options, trailing text, other owners or repositories; each lock component appears
-    exactly once with the lock's repository and sha. Indented continuation and comment lines are ignored;
-    indexed `name==version` pins are outside this check.
+    Allow-list: after joining backslash continuations as pip does, every logical line must be blank, a
+    comment, exactly `<dist> @ git+https://github.com/cogno-us/<repo>@<40 lowercase hex>`, or an indexed
+    `name==version` pin optionally followed by `--hash=sha256:<64 hex>` options (the uv-generated form).
+    Anything else (URLs, paths, other VCS schemes, environment references, options, indented
+    non-comment lines, a trailing backslash) is refused. Each lock component appears exactly once with
+    the lock's repository and sha.
     """
     path = root / "requirements" / "stack.txt"
     if not path.is_file():
         return []  # check_requirement_locks reports the missing file
     errors: list[str] = []
     seen: dict[str, list[tuple[str, str]]] = {}
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip() or line[0] in " \t#":
+    for number, line, open_end in _logical_lines(path.read_text(encoding="utf-8")):
+        if not line.strip() or _COMMENT.match(line):
             continue
-        match = GIT_PIN.fullmatch(line)
+        match = None if open_end else GIT_PIN.fullmatch(line)
         if match:
             seen.setdefault(match[1], []).append((match[2], match[3]))
-        elif _REFERENCE_LIKE.search(line):
+        elif open_end or not _INDEXED_PIN.fullmatch(line):
+            token = (line.split() or ["?"])[0][:60]
             errors.append(
-                f"requirements/stack.txt line {number} ({line.split()[0]}) is not a strict "
-                "`<dist> @ git+https://github.com/cogno-us/<repo>@<40 hex>` pin"
+                f"requirements/stack.txt line {number} ({token}) is not a strict "
+                "`<dist> @ git+https://github.com/cogno-us/<repo>@<40 hex>` pin or `name==version` pin"
             )
     for dist, pin in want.items():
         pins = seen.get(dist, [])
