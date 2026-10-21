@@ -55,6 +55,45 @@ def test_positive_cases_are_found(text: str, rule: str) -> None:
     assert rule in phrase_rules(text)
 
 
+CYR_O = chr(0x043E)
+MINUS = chr(0x2212)
+ZWSP = chr(0x200B)
+VS16 = chr(0xFE0F)
+GREEK_O = chr(0x03BF)
+
+
+@pytest.mark.parametrize(
+    ("text", "rule"),
+    [
+        (f"pr{CYR_O}duction-ready.", "production-ready"),
+        (f"pr{GREEK_O}duction ready", "production-ready"),
+        (f"production{MINUS}ready", "production-ready"),
+        (f"pro{ZWSP}duc{VS16}tion-ready", "production-ready"),
+        ("**production**-ready", "production-ready"),
+        ("`production`-`ready`", "production-ready"),
+        ("<b>production</b>-ready", "production-ready"),
+        ("production<!-- x -->-ready", "production-ready"),
+        ("production&#8209;ready", "production-ready"),
+        ("production&shy;&nbsp;ready", "production-ready"),
+        ("prod&#117;ction-ready", "production-ready"),
+        ("approved for production use", "production-ready"),
+        ("This is safe for production.", "production-ready"),
+        ("fit for production", "production-ready"),
+        ("Suitable for deployment", "production-ready"),
+        ("production-quality code", "production-ready"),
+        ("deployment-ready", "production-ready"),
+        ("ready for deployment", "production-ready"),
+        ("SOC 2 attested", "attested"),
+        ("SOC2 Type II audited", "attested"),
+        (chr(0x0441) + "ertified", "certified"),
+        ("&#99;ertified", "certified"),
+        ("**compl**iant", "compliant"),
+    ],
+)
+def test_evasions_are_found(text: str, rule: str) -> None:
+    assert rule in phrase_rules(text)
+
+
 @pytest.mark.parametrize(
     "text",
     [
@@ -65,6 +104,10 @@ def test_positive_cases_are_found(text: str, rule: str) -> None:
         "reply and apply",
         "cognous-ocs relays component verdicts and decides nothing.",
         "Ready to use for a demo; the demo is not a release.",
+        "The production quarterly report is ready.",
+        "Safe to use for a demo.",
+        "SOC 2 is a framework name only.",
+        "a<b and c>d",
     ],
 )
 def test_negative_cases_are_not_found(text: str) -> None:
@@ -131,6 +174,35 @@ def test_duplicate_allowlist_member_is_refused(tmp_path: Path) -> None:
     path.write_text(path.read_text().rstrip().removesuffix("}") + ',"allowed": []}')
     with pytest.raises(ValueError, match="duplicate"):
         cb.load_allowlist(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["a.rst", "a.svg", "a.xml", "a.js", "a.csv", "a.weird", "noext"],
+)
+def test_every_text_suffix_is_scanned(tmp_path: Path, name: str) -> None:
+    write_repo(tmp_path)
+    (tmp_path / "docs" / name).write_text(f"The stack is {PROD}.\n")
+    code, msgs = cb.run(tmp_path, [])
+    assert code == 1
+    assert any(f"docs/{name}:1" in m for m in msgs)
+
+
+def test_binary_files_are_skipped(tmp_path: Path) -> None:
+    write_repo(tmp_path)
+    (tmp_path / "docs" / "a.bin").write_bytes(b"\x00\x01" + PROD.encode())
+    (tmp_path / "docs" / "b.png").write_bytes(PROD.encode())
+    assert cb.run(tmp_path, [])[0] == 0
+
+
+def test_appended_evasion_in_a_document_fails(tmp_path: Path) -> None:
+    write_repo(tmp_path)
+    (tmp_path / "docs" / "a.md").write_text(
+        f"Plain.\napproved for production use, safe for production, and SOC 2 attested; pr{CYR_O}duction-ready.\n"
+    )
+    code, msgs = cb.run(tmp_path, [])
+    assert code == 1
+    assert any("docs/a.md:2" in m for m in msgs)
 
 
 def test_document_claim_fails_on_hold(tmp_path: Path) -> None:
