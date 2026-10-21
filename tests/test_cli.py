@@ -59,3 +59,41 @@ def test_diagnostics_dir_outside_roots_is_ignored(
     monkeypatch.setenv("OCS_DIAGNOSTICS_DIR", "/etc/ocs-diag")
     assert main([]) == 2
     assert not Path("/etc/ocs-diag").exists()
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--help"],
+        ["-h"],
+        ["validate", "--help"],
+        ["--format", "json", "--help"],
+        ["--format", "json", "validate", "--help"],
+        ["validate", "--format=json", "-h"],
+        ["demo", "--help"],
+        ["ci", "--help"],
+    ],
+)
+def test_help_exits_zero_with_help_text_only(
+    capsys: pytest.CaptureFixture[str], argv: list[str]
+) -> None:
+    assert main(argv) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("usage: cognous-ocs")
+    assert "envelope_version" not in out  # help text only, never help followed by an envelope
+
+
+def test_help_is_never_reported_as_a_validation_pass(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("OCS_DIAGNOSTICS_DIR", "diag")
+    assert main(["--format", "json", "validate", "--help"]) == 0
+    out = capsys.readouterr().out
+    assert '"outcome"' not in out
+    assert not (tmp_path / "diag").exists()  # no result, so no diagnostics file either
+
+
+def test_usage_errors_stay_invalid_exit_2(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--format", "json", "validate", "--bogus"]) == 2
+    assert json.loads(capsys.readouterr().out)["outcome"] == "invalid"

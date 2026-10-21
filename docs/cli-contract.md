@@ -47,6 +47,8 @@ Rules:
 - Any exit other than 0 writes `ci-diagnostics.json` (section 5) when `--out` or `OCS_DIAGNOSTICS_DIR` names a location.
 - The demo exits 0 only when its expected facts hold. Under `--strict` it instead propagates the underlying blocking result.
 
+**Correction (2026-10-22), help:** `cognous-ocs --help`, `-h` and `cognous-ocs COMMAND --help` print the usage text to stdout and exit 0, in text and in `--format json` mode alike. Help is documentation, not a result: no envelope is written (so JSON mode never has help text followed by an object), no `ci-diagnostics.json` is written, and the invocation is never a validation `pass`. Earlier builds exited 2 with an invalid envelope after printing help. A usage error (an unknown option or command) is still `invalid`, exit 2, with an envelope. `--version` is unchanged (exit 0, version text). Passthrough help or version (`cognous-ocs replay validate --help`) is handled as described in section 2.
+
 ## 4. JSON result
 
 With `--format json`, one JSON object per run on standard output, nothing else.
