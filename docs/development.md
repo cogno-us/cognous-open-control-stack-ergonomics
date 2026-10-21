@@ -54,6 +54,24 @@ exists: a claim in an image, in another language, or in a paraphrase is not dete
 and the allow-list are read with a strict loader that refuses duplicate members, `NaN`, `Infinity`,
 overflowing numbers and a root that is not an object; any refusal is HOLD.
 
+## What is and is not checked (2026-10-22)
+
+Added text; it narrows nothing said elsewhere.
+
+- Claims in the README (the claim rule, the pin table, "each equals the revision in the hub lock"):
+  `scripts/check_claim_boundaries.py` checks wording against the forbidden-claim rules above, nothing
+  else. It does not check that any other sentence is true.
+- Pins: `scripts/check_lock_freshness.py` compares `pyproject.toml` (the `stack` extra), the
+  `requirements/` files and any `requirements*.lock` with `src/cognous_ocs/lock.py`. That is
+  agreement inside this repository only.
+- The hub lock: no script in this repository reads the hub's `component-lock.json`, fetches it or
+  compares against it. The statements that the pins equal the hub lock, and the README pin table's
+  "Hub lock" and "Same" columns, are written at the pin round by whoever runs the generator against the
+  hub; between pin rounds nothing here detects drift. The check of hub-lock equality belongs to the
+  hub repository's own qualification workflows and to the pin-round reviewer. This repository does
+  not record which hub commit it was last compared with.
+- Network: the tests and checks run offline, so none of them could read the hub.
+
 ## Pre-push hook
 
 `.githooks/pre-push` runs `make pre-push` (lint and the claim check). It is not enabled
