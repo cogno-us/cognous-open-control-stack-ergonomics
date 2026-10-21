@@ -39,3 +39,5 @@ The component validators do not check versions themselves (`arb validate` accept
 ## What a pass does not prove
 
 A pass says `artifact-internal validation passed`. It does not prove external source linkage (that the artifact matches what really happened), producer authenticity (who made it), completeness or truth of the content, or anything beyond the pinned component validator's own checks. Component warnings still exit 0; they appear in `extensions["x-component-output"]`.
+
+Update 2026-10-22: the two statements above that `arb validate` is version-blind describe the replay-bundle pin before the hub-lock move. At the current pin, `arb validate` refuses a `bundle_version` it does not support (`E002`, exit 1; cogno-us/cognous-replay-bundle#71), so an unknown version such as `9.9.9` is now refused by the component as well. The registry still decides first and still exits 2 for it; that check is kept as defence in depth, and the `0.2.0` archival-only entry is unchanged. `agep validate` still has no version check.

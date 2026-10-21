@@ -28,10 +28,10 @@ dependencies = []
 # references: this extra is for installing from this repository, not for an
 # index upload. Nothing is published from this repository.
 stack = [
-    "agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@ff5490828b2bf7f6a976da209f3f533701855687",
-    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@2bac7875391cad0a431fa0d75208b7ade39743e3",
-    "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@6a6a477495ac24e813f12bb0fe314acfe8bac9cf",
-    "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@fd030615a782a064b89c57e8e40d7f220f99ff9e",
+    "agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@fa170815ef96a54c233d0dd9da821b60debabf8b",
+    "agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@e77fe0ee8714617899592528e660a80fbb2e864a",
+    "agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@53c0cd60d565ea1797ed0be87a2310c5b68b24f6",
+    "agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@99ba3211450b25a18007b4b62907b072fe05c964",
 ]
 dev = [
     "pytest>=8",
