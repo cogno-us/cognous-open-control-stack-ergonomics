@@ -45,30 +45,51 @@ def check_requirement_locks(root: Path, extras: dict[str, list[str]]) -> list[st
 
 
 GIT_PIN = re.compile(
-    r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*@\s*git\+https://github\.com/([^@\s]+)@([0-9A-Fa-f]+)", re.M
+    r"([A-Za-z0-9][A-Za-z0-9._-]*) @ git\+https://github\.com/(cogno-us/[A-Za-z0-9._-]+)@([0-9a-f]{40})"
 )
+_REFERENCE_LIKE = re.compile(r"^(?:[A-Za-z0-9][A-Za-z0-9._-]*\s*@|-|git\+)|git\+|\s@\s")
 
 
 def check_stack_requirements(root: Path, want: dict[str, tuple[str, str]]) -> list[str]:
-    """requirements/stack.txt carries exactly the lock's git pins: same repository and sha, no extras."""
+    """requirements/stack.txt carries exactly the lock's git pins, one strict line each.
+
+    A direct-reference line must be exactly `<dist> @ git+https://github.com/cogno-us/<repo>@<40 lowercase hex>`:
+    no markers, fragments, options, trailing text, other owners or repositories; each lock component appears
+    exactly once with the lock's repository and sha. Indented continuation and comment lines are ignored;
+    indexed `name==version` pins are outside this check.
+    """
     path = root / "requirements" / "stack.txt"
     if not path.is_file():
         return []  # check_requirement_locks reports the missing file
-    text = path.read_text(encoding="utf-8")
-    have = {m[0]: (m[1], m[2]) for m in GIT_PIN.findall(text)}
-    errors = [
-        f"requirements/stack.txt pin for {dist} differs from cognous_ocs.lock"
-        for dist, pin in want.items()
-        if have.get(dist) != pin
+    errors: list[str] = []
+    seen: dict[str, list[tuple[str, str]]] = {}
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip() or line[0] in " \t#":
+            continue
+        match = GIT_PIN.fullmatch(line)
+        if match:
+            seen.setdefault(match[1], []).append((match[2], match[3]))
+        elif _REFERENCE_LIKE.search(line):
+            errors.append(
+                f"requirements/stack.txt line {number} ({line.split()[0]}) is not a strict "
+                "`<dist> @ git+https://github.com/cogno-us/<repo>@<40 hex>` pin"
+            )
+    for dist, pin in want.items():
+        pins = seen.get(dist, [])
+        if len(pins) > 1:
+            errors.append(
+                f"requirements/stack.txt pins {dist} {len(pins)} times; exactly one pin is allowed"
+            )
+        if pins != [pin]:
+            errors.append(f"requirements/stack.txt pin for {dist} differs from cognous_ocs.lock")
+    listed = {c[1] for c in want.values()}
+    errors += [
+        f"requirements/stack.txt names commit {sha[:12]} that cognous_ocs.lock does not list"
+        for sha in sorted({p[1] for pins in seen.values() for p in pins} - listed)
     ]
     errors += [
         f"requirements/stack.txt has a git pin for {dist} that cognous_ocs.lock does not list"
-        for dist in sorted(set(have) - set(want))
-    ]
-    shas = re.findall(r"@([0-9A-Fa-f]{40})\b", text)
-    errors += [
-        f"requirements/stack.txt names commit {sha[:12]} that cognous_ocs.lock does not list"
-        for sha in sorted({x for x in shas if x not in {c[1] for c in want.values()}})
+        for dist in sorted(set(seen) - set(want))
     ]
     return errors
 
