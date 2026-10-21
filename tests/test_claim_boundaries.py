@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -97,6 +98,39 @@ def test_clean_repo_passes_on_hold(tmp_path: Path) -> None:
     write_repo(tmp_path)
     code, msgs = cb.run(tmp_path, [])
     assert code == 0, msgs
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda t: (
+            t.rstrip().removesuffix("}")
+            + ',"publication_authorized": true,"production_authorized": true}'
+        ),
+        lambda t: t.replace("false", "NaN", 1),
+        lambda t: "[" + t + "]",
+    ],
+    ids=["duplicate-members", "nan", "array-root"],
+)
+def test_malformed_state_keeps_claims_enforced(
+    tmp_path: Path, mutate: Callable[[str], str]
+) -> None:
+    write_repo(tmp_path)
+    (tmp_path / "docs" / "a.md").write_text(f"The stack is {PROD}.\n")
+    state = tmp_path / "release-state.json"
+    state.write_text(mutate(state.read_text()))
+    code, msgs = cb.run(tmp_path, [])
+    assert code == 1
+    assert not any("not enforced" in m for m in msgs)
+    assert any("HOLD assumed" in m for m in msgs)
+
+
+def test_duplicate_allowlist_member_is_refused(tmp_path: Path) -> None:
+    write_repo(tmp_path)
+    path = tmp_path / "scripts" / "claim_boundaries_allowlist.json"
+    path.write_text(path.read_text().rstrip().removesuffix("}") + ',"allowed": []}')
+    with pytest.raises(ValueError, match="duplicate"):
+        cb.load_allowlist(tmp_path)
 
 
 def test_document_claim_fails_on_hold(tmp_path: Path) -> None:

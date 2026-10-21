@@ -53,14 +53,55 @@ def tracked_files(root: Path) -> list[Path]:
         return sorted(found)
 
 
+def _no_duplicate_members(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in out:
+            raise ValueError(f"duplicate member {key!r}")
+        out[key] = value
+    return out
+
+
+def _refuse_constant(name: str) -> Any:
+    raise ValueError(f"non-finite JSON constant {name}")
+
+
+def _finite_float(lexeme: str) -> float:
+    value = float(lexeme)
+    if value in (float("inf"), float("-inf")):
+        raise ValueError("float overflows to infinity")
+    return value
+
+
+def strict_json_loads(text: str) -> dict[str, Any]:
+    """Parse one JSON object: no duplicate members, no NaN/Infinity/overflowing floats.
+
+    Python's default parser keeps the last of several equal members, so a file that reads
+    false at the top could be flipped by an appended duplicate. That is refused here.
+    ValueError (JSONDecodeError included) on any refusal, and for a root that is not an object.
+    """
+    try:
+        data = json.loads(
+            text,
+            object_pairs_hook=_no_duplicate_members,
+            parse_constant=_refuse_constant,
+            parse_float=_finite_float,
+        )
+    except RecursionError as exc:
+        raise ValueError("nesting too deep") from exc
+    if not isinstance(data, dict):
+        raise ValueError("root is not a JSON object")
+    return data
+
+
 def read_release_state(root: Path) -> dict[str, Any]:
     """Parse release-state.json strictly. Missing or malformed raises StateError (= HOLD)."""
     path = root / "release-state.json"
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = strict_json_loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise StateError(f"release-state.json unreadable ({type(exc).__name__})") from exc
-    if not isinstance(data, dict) or set(data) != RELEASE_STATE_KEYS:
+    if set(data) != RELEASE_STATE_KEYS:
         raise StateError("release-state.json members differ from the closed set")
     for key in ("publication_authorized", "production_authorized"):
         if not isinstance(data[key], bool):

@@ -82,8 +82,8 @@ def scan_text(path: str, text: str) -> list[Finding]:
 
 
 def load_allowlist(root: Path) -> dict[str, Any]:
-    data = json.loads((root / ALLOWLIST_NAME).read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or set(data) != {"excluded_paths", "allowed"}:
+    data = _repo.strict_json_loads((root / ALLOWLIST_NAME).read_text(encoding="utf-8"))
+    if set(data) != {"excluded_paths", "allowed"}:
         raise ValueError("allow-list members differ from the closed set")
     for entry in data["excluded_paths"]:
         if set(entry) != {"path", "reason"} or not entry["reason"].strip():
