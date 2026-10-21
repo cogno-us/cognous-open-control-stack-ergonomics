@@ -28,7 +28,7 @@ from typing import Any
 
 from cognous_ocs import __version__, validate
 from cognous_ocs.cli import Outcome
-from cognous_ocs.doctor import FAILED, _confined, _read, run_checks
+from cognous_ocs.doctor import FAILED, _confined, _plain_file, _read, run_checks
 from cognous_ocs.envelope import (
     ERROR,
     FAIL,
@@ -50,6 +50,7 @@ SUMMARY_MD = "ci-summary.md"
 REPORTS_DIR = "reports"
 EVIDENCE_DIR = "evidence"
 INPUTS_DIR = "inputs"
+MISSING_KIND = "missing-reference"
 DIAGNOSTICS = "ci-diagnostics.json"
 OWNED = frozenset({SUMMARY_JSON, SUMMARY_MD, DIAGNOSTICS, REPORTS_DIR, EVIDENCE_DIR, INPUTS_DIR})
 SAFE_TEXT = re.compile(r"[^\w ./@+:=,;()'-]")
@@ -151,8 +152,10 @@ def _collect(
                 ("run_record", "run-record", "validate workflow run record"),
             ):
                 resolved, problem = _confined(base, settings.get(key))
-                if resolved is None or problem or not resolved.is_file():
-                    continue  # the doctor step reports the reference problem
+                if resolved is None or problem or not _plain_file(resolved):
+                    # a listed artifact that cannot be validated fails the run on its own step
+                    steps.append(Step(f"{label} (reference)", MISSING_KIND, None))
+                    continue
                 steps.append(Step(label, kind, resolved))
                 files.append(resolved)
     if pack is not None:
@@ -170,6 +173,14 @@ def _run_step(step: Step, workflow: str | None) -> None:
         step.exit_code = 2 if failed else 0
         step.reason_codes = [c.code for c in failed]
         step.messages = [f"{c.status} {c.code}: {c.message}" for c in checks]
+        return
+    if step.kind == MISSING_KIND:
+        step.outcome = INVALID
+        step.exit_code = 2
+        step.reason_codes = [OCS_PATHS]
+        step.messages = [
+            "a workflow artifact named in workflow.json is missing, not a plain file or not confined"
+        ]
         return
     if step.path is None:
         raise ValueError("a validate step needs a path")
