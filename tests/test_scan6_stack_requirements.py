@@ -23,7 +23,8 @@ def stack_root(tmp_path: Path) -> Path:
 
 def run(root: Path, text: str) -> list[str]:
     (root / "requirements" / "stack.txt").write_text(text, encoding="utf-8")
-    return lock.check_stack_requirements(root, WANT)
+    errors: list[str] = lock.check_stack_requirements(root, WANT)
+    return errors
 
 
 def real_text() -> str:
