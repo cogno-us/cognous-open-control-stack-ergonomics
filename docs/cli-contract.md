@@ -123,6 +123,8 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 
 - **Correction (Phase 2):** `init` writes four files, not three: `workflow.json` names the manifest, policy and run record and carries the signing and redaction settings `doctor` reads. A differing managed file is reported as `OCS_PATHS` (the same code the demo uses for a refused output directory). `doctor` never writes, including `ci-diagnostics.json`, and a check that cannot run because an earlier one failed is SKIP. Details in `docs/init-doctor.md`.
 
+**Correction (2026-10-22), strict reading:** besides duplicate members, NaN/Infinity and non-UTF-8, `validate` also refuses a number that overflows to infinity (`1e999`), a lone surrogate escape in a string or member name (a valid pair is kept) and nesting beyond the parser's limit (a typed refusal, not a `RecursionError`), each as `OCS_INPUT_INVALID`, exit 2. The rule follows the verifier's wire layer; this reader does not apply the verifier's depth limit of 64, integer range or lexeme length, which the component validator still enforces.
+
 ## 8. Path and write confinement
 
 - Outputs must resolve inside the workspace or the runner temp directory. Symlink and hard-link aliasing is refused.

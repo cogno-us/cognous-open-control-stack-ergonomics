@@ -166,6 +166,39 @@ def test_unparseable_or_non_object_is_invalid(ws: Path, text: str) -> None:
     assert (result.exit_code, result.reason_codes) == (2, ["OCS_INPUT_INVALID"])
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        '{"a": 1e999}',
+        '{"a": -1e999}',
+        '{"a": [1, 2.5e400]}',
+        '{"a": "\\ud800"}',
+        '{"a": "x\\udc00y"}',
+        '{"a": "\\ud800\\u0041"}',
+        '{"\\ud800": 1}',
+        '{"a": {"b": ["\\udfff"]}}',
+        '{"a":' + "[" * 100_000 + "]" * 100_000 + "}",
+    ],
+    ids=["inf", "-inf", "nested-inf", "high", "low", "high-then-bmp", "key", "deep", "nesting"],
+)
+def test_overflow_lone_surrogate_and_deep_nesting_are_invalid(ws: Path, text: str) -> None:
+    (ws / "x.json").write_text(text, encoding="ascii")
+    result = run(ws, "x.json", "replay-bundle")
+    assert (result.exit_code, result.reason_codes) == (2, ["OCS_INPUT_INVALID"])
+    assert "RecursionError" not in "".join(result.messages)
+
+
+def test_load_document_keeps_valid_surrogate_pairs_and_large_finite_numbers(ws: Path) -> None:
+    from cognous_ocs.validate import load_document
+
+    (ws / "ok.json").write_text(
+        '{"a": "\\ud83d\\ude00", "b": 1e308, "c": 5e-324, "d": 0.0}', encoding="ascii"
+    )
+    doc = load_document(ws / "ok.json")
+    assert doc["a"] == "\U0001f600"
+    assert doc["b"] == 1e308
+
+
 def test_invalid_utf8_and_missing_file_and_crlf_path(ws: Path) -> None:
     (ws / "x.json").write_bytes(b'{"a": "\xff"}')
     assert run(ws, "x.json", "manifest").reason_codes == ["OCS_INPUT_INVALID"]
