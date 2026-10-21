@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -219,6 +220,30 @@ def test_authorization_gate(tmp_path: Path, pub: object, prod: object, expected:
 
 def test_missing_state_is_refused(tmp_path: Path) -> None:
     assert authz.main(["--root", str(tmp_path)]) == 1
+
+
+FLIP = ',"publication_authorized": true,"production_authorized": true}'
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda t: t.rstrip().removesuffix("}") + FLIP,  # duplicate members, last one wins
+        lambda t: t.replace("false", "NaN", 1),
+        lambda t: t.replace('"n"', "1e999", 1),
+        lambda t: "[" + t + "]",
+        lambda t: "null",
+    ],
+    ids=["duplicate-members", "nan", "overflow-float", "array-root", "null-root"],
+)
+def test_malformed_state_is_hold_not_authorization(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], mutate: Callable[[str], str]
+) -> None:
+    write_state(tmp_path, False, False)
+    path = tmp_path / "release-state.json"
+    path.write_text(mutate(path.read_text()))
+    assert authz.main(["--root", str(tmp_path)]) == 1
+    assert "authorizes publication" not in capsys.readouterr().out
 
 
 # Makefile structure

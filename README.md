@@ -117,7 +117,7 @@ Every registered subcommand is in the [CLI contract](docs/cli-contract.md#2-comm
 | `schemas/` | Schema snapshots for the result envelope and the diagnostics file, with recorded hashes ([schemas](docs/schemas.md)). | merged |
 | `examples/sample-repo/` | The workflow this repository's CI runs the action on. | merged |
 | `requirements/` | Hashed locks for the `dev` and `stack` extras ([testing](docs/testing.md)). | merged |
-| `scripts/` | Repository checks: docs alignment, claim boundaries, lock freshness, examples parity, schema snapshots, action hygiene, wheel contents, release authorization. | merged |
+| `scripts/` | Repository checks: docs alignment, claim boundaries, lock freshness, examples parity, schema snapshots, action hygiene, wheel contents, release authorization. What they do and do not check, including that none reads the hub lock: [development](docs/development.md#what-is-and-is-not-checked-2026-10-22). | merged |
 | `tools/derive_fixtures.py` | Regenerates the control-step demo inputs from checkouts at the pinned commits. | merged |
 | `release-state.json` | The hold record: publication and production are not authorized. | known limit |
 

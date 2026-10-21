@@ -62,14 +62,64 @@ def _reject_constant(name: str) -> Any:
     raise ValueError(f"non-standard JSON constant {name}")
 
 
+class _Refused(ValueError):
+    """A wire-level refusal the JSON parser does not make by itself."""
+
+
+def _finite_float(lexeme: str) -> float:
+    value = float(lexeme)
+    if value in (float("inf"), float("-inf")):
+        raise _Refused("float overflows to infinity")
+    return value
+
+
+def _has_lone_surrogate(text: str) -> bool:
+    return any(0xD800 <= ord(ch) <= 0xDFFF for ch in text)
+
+
+def _refuse_lone_surrogates(doc: Any) -> None:
+    """Walk the parsed value (iteratively, so depth cannot matter) for lone surrogates.
+
+    json.loads joins a valid \\ud83d\\ude00 pair into one character, so any surrogate code point
+    left in a string or member name is a lone escape, which the verifier's wire layer refuses.
+    """
+    stack: list[Any] = [doc]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, str):
+            if _has_lone_surrogate(node):
+                raise _Refused("lone surrogate escape")
+        elif isinstance(node, dict):
+            for key, value in node.items():
+                if _has_lone_surrogate(key):
+                    raise _Refused("lone surrogate escape")
+                stack.append(value)
+        elif isinstance(node, list):
+            stack.extend(node)
+
+
 def load_document(path: Path) -> dict[str, Any]:
-    """Parse the artifact strictly: UTF-8, one object, no duplicate members, no NaN/Infinity."""
+    """Parse the artifact strictly.
+
+    UTF-8, one object, no duplicate members, no NaN/Infinity, no float that overflows to
+    infinity (1e999), no lone surrogate escape, and nesting beyond the parser's limit is a
+    typed refusal, not a RecursionError. Every refusal is a ValueError.
+    """
     if path.stat().st_size > MAX_BYTES:
         raise ValueError("file is larger than 64 MiB")
     text = path.read_bytes().decode("utf-8")
-    doc = json.loads(text, object_pairs_hook=_no_duplicates, parse_constant=_reject_constant)
+    try:
+        doc = json.loads(
+            text,
+            object_pairs_hook=_no_duplicates,
+            parse_constant=_reject_constant,
+            parse_float=_finite_float,
+        )
+    except RecursionError as exc:
+        raise _Refused("nesting too deep") from exc
     if not isinstance(doc, dict):
         raise ValueError("top level is not a JSON object")
+    _refuse_lone_surrogates(doc)
     return doc
 
 

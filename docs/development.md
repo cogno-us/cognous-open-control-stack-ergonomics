@@ -42,6 +42,36 @@ A match is excused only by an exact entry in `scripts/claim_boundaries_allowlist
 rule, the whole line, and a reason). An entry that matches nothing fails the build. Only an owner
 decision changes `release-state.json`.
 
+Update 2026-10-22 (matching, scope and strict state). Text is folded before matching: HTML
+entities are decoded, NFKC and casefold applied, zero-width, format and combining characters
+dropped, every dash and the minus sign unified, Latin lookalikes from Cyrillic, Greek and Armenian
+folded, and Markdown emphasis, backticks and HTML tags and comments removed, so splitting a phrase
+with those does not hide it. The third rule now also covers deployment, quality and worthy variants of the ready and grade wording, and
+safe, fit, approved, cleared or suitable wording aimed at production or deployment; a fourth rule, `attested`, covers SOC 1, 2 or 3 attested or audited. Every tracked file
+that is UTF-8 text is scanned, whatever its suffix; files with a NUL byte and known binary suffixes
+are skipped. The check is a best-effort guard against careless wording, not proof that no claim
+exists: a claim in an image, in another language, or in a paraphrase is not detected. `release-state.json`
+and the allow-list are read with a strict loader that refuses duplicate members, `NaN`, `Infinity`,
+overflowing numbers and a root that is not an object; any refusal is HOLD.
+
+## What is and is not checked (2026-10-22)
+
+Added text; it narrows nothing said elsewhere.
+
+- Claims in the README (the claim rule, the pin table, "each equals the revision in the hub lock"):
+  `scripts/check_claim_boundaries.py` checks wording against the forbidden-claim rules above, nothing
+  else. It does not check that any other sentence is true.
+- Pins: `scripts/check_lock_freshness.py` compares `pyproject.toml` (the `stack` extra), the
+  `requirements/` files and any `requirements*.lock` with `src/cognous_ocs/lock.py`. That is
+  agreement inside this repository only.
+- The hub lock: no script in this repository reads the hub's `component-lock.json`, fetches it or
+  compares against it. The statements that the pins equal the hub lock, and the README pin table's
+  "Hub lock" and "Same" columns, are written at the pin round by whoever runs the generator against the
+  hub; between pin rounds nothing here detects drift. The check of hub-lock equality belongs to the
+  hub repository's own qualification workflows and to the pin-round reviewer. This repository does
+  not record which hub commit it was last compared with.
+- Network: the tests and checks run offline, so none of them could read the hub.
+
 ## Pre-push hook
 
 `.githooks/pre-push` runs `make pre-push` (lint and the claim check). It is not enabled

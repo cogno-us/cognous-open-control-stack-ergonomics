@@ -47,6 +47,8 @@ Rules:
 - Any exit other than 0 writes `ci-diagnostics.json` (section 5) when `--out` or `OCS_DIAGNOSTICS_DIR` names a location.
 - The demo exits 0 only when its expected facts hold. Under `--strict` it instead propagates the underlying blocking result.
 
+**Correction (2026-10-22), help:** `cognous-ocs --help`, `-h` and `cognous-ocs COMMAND --help` print the usage text to stdout and exit 0, in text and in `--format json` mode alike. Help is documentation, not a result: no envelope is written (so JSON mode never has help text followed by an object), no `ci-diagnostics.json` is written, and the invocation is never a validation `pass`. Earlier builds exited 2 with an invalid envelope after printing help. A usage error (an unknown option or command) is still `invalid`, exit 2, with an envelope. `--version` is unchanged (exit 0, version text). Passthrough help or version (`cognous-ocs replay validate --help`) is handled as described in section 2.
+
 ## 4. JSON result
 
 With `--format json`, one JSON object per run on standard output, nothing else.
@@ -120,6 +122,8 @@ Component reason codes (for example the control plane's `runtime-authority-reaso
 - **Correction (Phase 2):** the registry lives in `src/cognous_ocs/registry.py` and is listed in `docs/validate.md`. A missing, non-string or ambiguous version member matches no pair. A file whose `artifact_kind` disagrees with `--kind` is refused. Duplicate JSON members, NaN/Infinity and non-UTF-8 are refused as `OCS_INPUT_INVALID`. Pins are checked only for the one component the pair needs.
 
 - **Correction (Phase 2):** `init` writes four files, not three: `workflow.json` names the manifest, policy and run record and carries the signing and redaction settings `doctor` reads. A differing managed file is reported as `OCS_PATHS` (the same code the demo uses for a refused output directory). `doctor` never writes, including `ci-diagnostics.json`, and a check that cannot run because an earlier one failed is SKIP. Details in `docs/init-doctor.md`.
+
+**Correction (2026-10-22), strict reading:** besides duplicate members, NaN/Infinity and non-UTF-8, `validate` also refuses a number that overflows to infinity (`1e999`), a lone surrogate escape in a string or member name (a valid pair is kept) and nesting beyond the parser's limit (a typed refusal, not a `RecursionError`), each as `OCS_INPUT_INVALID`, exit 2. The rule follows the verifier's wire layer; this reader does not apply the verifier's depth limit of 64, integer range or lexeme length, which the component validator still enforces.
 
 ## 8. Path and write confinement
 

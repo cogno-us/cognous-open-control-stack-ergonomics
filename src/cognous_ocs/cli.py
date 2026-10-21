@@ -30,11 +30,17 @@ class UsageError(Exception):
     pass
 
 
+class HelpShown(Exception):
+    """argparse printed help and asked to exit 0. Not an error and not a verdict."""
+
+
 class _Parser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
         raise UsageError(message)
 
     def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+        if status == 0:
+            raise HelpShown
         raise UsageError(message or "")
 
 
@@ -129,6 +135,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     try:
         args = parser.parse_args(args_in)
+    except HelpShown:
+        # argparse already wrote the help text to stdout. Help is documentation, not a result:
+        # exit 0, no envelope in either format (cli-contract section 3), never a validation pass.
+        return 0
     except UsageError as exc:
         result = Result(
             command="cognous-ocs",

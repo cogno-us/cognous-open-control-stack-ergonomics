@@ -13,7 +13,7 @@ Usage: check_claim_boundaries.py [--root DIR] [--wheel FILE ...]
 from __future__ import annotations
 
 import argparse
-import json
+import html
 import re
 import sys
 import unicodedata
@@ -31,13 +31,104 @@ RULES: dict[str, re.Pattern[str]] = {
     "certified": re.compile(r"\bcertif(?:ied|ies|ying|y|ication)\b"),
     "compliant": re.compile(r"\bcompl(?:iant|iance|y|ies|ied|ying)\b"),
     "production-ready": re.compile(
-        rf"\b(?:production|prod|enterprise|audit){SEP}(?:ready|grade)\b"
-        rf"|\bready{SEP}for{SEP}production\b"
+        rf"\b(?:production|prod|deployment|deploy|enterprise|audit){SEP}(?:ready|grade|quality|worthy)\b"
+        rf"|\bready{SEP}for{SEP}(?:production|deployment)\b"
+        rf"|\b(?:safe|fit|approved|cleared|suitable){SEP}for{SEP}(?:production|prod|deployment)\b"
+    ),
+    "attested": re.compile(
+        rf"\bsoc{SEP}[123]\b(?:{SEP}type{SEP}(?:i{{1,2}}|[12]))?{SEP}(?:attest|audit)"
     ),
 }
-IGNORABLE = {"Cf"}  # zero-width and soft-hyphen characters are dropped before matching
-TEXT_SUFFIXES = {".md", ".txt", ".py", ".json", ".yml", ".yaml", ".toml", ".html", ".cfg", ".sh"}
+# Characters that hide a phrase: zero-width and format characters (Cf), variation selectors and
+# other combining marks (Mn, after decomposition), and the markup that splits words in Markdown
+# and HTML. They are dropped before matching.
+IGNORABLE = {"Cf", "Mn"}
+MARKUP = re.compile(r"<!--.*?-->|</?[A-Za-z][^<>]*>|[*`~\\]", re.DOTALL)
+ENTITY = re.compile(r"&(?:#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});")
+# Latin lookalikes from Cyrillic, Greek, Armenian and Latin-extended letters, applied after
+# NFKC and casefold. The sibling verifier repository's copy of this script uses the same table.
+LOOKALIKES = str.maketrans(
+    {
+        # Cyrillic
+        "а": "a",
+        "е": "e",
+        "о": "o",
+        "р": "p",
+        "с": "c",
+        "у": "y",
+        "х": "x",
+        "і": "i",
+        "ј": "j",
+        "ѕ": "s",
+        "ԁ": "d",
+        "һ": "h",
+        "ԛ": "q",
+        "ԝ": "w",
+        "ѵ": "v",
+        "к": "k",
+        "м": "m",
+        "н": "h",
+        "т": "t",
+        "в": "b",
+        "ь": "b",
+        "г": "r",
+        "п": "n",
+        "ү": "y",
+        # Greek
+        "ο": "o",
+        "α": "a",
+        "ν": "v",
+        "ρ": "p",
+        "ι": "i",
+        "τ": "t",
+        "κ": "k",
+        "υ": "u",
+        "ε": "e",
+        "η": "n",
+        "χ": "x",
+        "γ": "y",
+        "ϲ": "c",
+        "ϳ": "j",
+        "ς": "c",
+        "β": "b",
+        # Armenian
+        "ս": "u",
+        "օ": "o",
+        "ո": "n",
+        "ց": "g",
+        "հ": "h",
+        "ք": "p",
+        "ԍ": "g",
+        # Latin extended and IPA
+        "ı": "i",
+        "ɡ": "g",
+        "ɑ": "a",
+        "ɩ": "i",
+        "ʀ": "r",
+        "ɴ": "n",
+        "ᴅ": "d",
+        "ᴇ": "e",
+        "ᴏ": "o",
+        "ᴘ": "p",
+        "ᴛ": "t",
+        "ᴜ": "u",
+        "ᴠ": "v",
+        "ᴡ": "w",
+        "ᴢ": "z",
+    }
+)
+TEXT_SUFFIXES = {
+    ".md", ".markdown", ".rst", ".adoc", ".txt", ".py", ".pyi", ".json", ".jsonl", ".yml", ".yaml",
+    ".toml", ".html", ".htm", ".xml", ".svg", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
+    ".css", ".csv", ".tsv", ".cfg", ".ini", ".sh", ".bash", ".tex", ".ipynb", ".lock", ".in",
+    ".properties", ".env", ".conf",
+}  # fmt: skip
 TEXT_NAMES = {"Makefile", "pre-push", "NOTICE"}
+BINARY_SUFFIXES = {
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp", ".pdf", ".zip", ".gz", ".tgz",
+    ".bz2", ".xz", ".whl", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".pyc", ".so", ".db",
+    ".sqlite", ".mp4", ".mov",
+}  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -51,26 +142,54 @@ class Finding:
         return f"{self.path}:{self.line}: [{self.rule}] {self.text[:160]}"
 
 
+def _fold_entities(text: str) -> str:
+    """Decode HTML entities; a decoded line break becomes a space so line numbers hold."""
+
+    def one(m: re.Match[str]) -> str:
+        out = html.unescape(m.group(0))
+        return " " if any(c in out for c in "\r\n\x0b\x0c\x85\u2028\u2029") else out
+
+    return ENTITY.sub(one, text)
+
+
 def _normalise(text: str) -> tuple[str, list[int]]:
-    """NFKC, casefold, drop ignorable characters; return text and each char's source line."""
+    """Fold text for matching; return it and each char's source line.
+
+    Order: entities, NFKC, decompose, casefold, drop ignorable characters, unify dashes and
+    minus signs, fold Latin lookalikes, drop Markdown and HTML markup.
+    """
     chars: list[str] = []
     lines: list[int] = []
     line = 1
-    for raw in unicodedata.normalize("NFKC", text):
+    for raw in unicodedata.normalize("NFKC", _fold_entities(text)):
         if raw == "\n":
             line += 1
-        if unicodedata.category(raw) in IGNORABLE:
-            continue
-        for ch in raw.casefold():
-            chars.append(ch)
-            lines.append(line)
-    return "".join(chars), lines
+        for part in unicodedata.normalize("NFD", raw):
+            if unicodedata.category(part) in IGNORABLE:
+                continue
+            for ch in part.casefold():
+                if unicodedata.category(ch) == "Pd" or ch in "\u2212\u2043\ufe63\u02d7":
+                    ch = "-"
+                chars.append(ch.translate(LOOKALIKES))
+                lines.append(line)
+    return _drop_markup("".join(chars), lines)
+
+
+def _drop_markup(norm: str, lines: list[int]) -> tuple[str, list[int]]:
+    keep = [True] * len(norm)
+    for m in MARKUP.finditer(norm):
+        for i in range(m.start(), m.end()):
+            # keep line breaks that sit inside a tag so later line numbers stay right
+            keep[i] = norm[i] == "\n"
+    return (
+        "".join(c for c, k in zip(norm, keep, strict=True) if k),
+        [n for n, k in zip(lines, keep, strict=True) if k],
+    )
 
 
 def scan_text(path: str, text: str) -> list[Finding]:
     """All rule matches in text. Phrases split across lines or by hyphen variants still match."""
-    norm, line_of = _normalise(text.replace("‐", "-").replace("‑", "-"))
-    norm = norm.replace("‒", "-").replace("–", "-").replace("—", "-")
+    norm, line_of = _normalise(text)
     source_lines = unicodedata.normalize("NFKC", text).split("\n")
     found: list[Finding] = []
     for rule, pattern in RULES.items():
@@ -82,8 +201,8 @@ def scan_text(path: str, text: str) -> list[Finding]:
 
 
 def load_allowlist(root: Path) -> dict[str, Any]:
-    data = json.loads((root / ALLOWLIST_NAME).read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or set(data) != {"excluded_paths", "allowed"}:
+    data = _repo.strict_json_loads((root / ALLOWLIST_NAME).read_text(encoding="utf-8"))
+    if set(data) != {"excluded_paths", "allowed"}:
         raise ValueError("allow-list members differ from the closed set")
     for entry in data["excluded_paths"]:
         if set(entry) != {"path", "reason"} or not entry["reason"].strip():
@@ -104,21 +223,32 @@ def _excluded(rel: str, excluded: list[dict[str, str]]) -> bool:
 
 
 def _is_text(path: Path) -> bool:
-    return path.suffix in TEXT_SUFFIXES or path.name in TEXT_NAMES
+    return path.suffix.lower() in TEXT_SUFFIXES or path.name in TEXT_NAMES
 
 
 def scan_tree(root: Path, allow: dict[str, Any]) -> list[Finding]:
+    """Scan every tracked or untracked-unignored file that is text.
+
+    A file with a known text suffix must be UTF-8 or it is a finding. Any other file is read
+    too: it is scanned when it is UTF-8 without NUL bytes, and skipped as binary otherwise
+    (known binary suffixes are not read), so a new suffix cannot hide a claim.
+    """
     findings: list[Finding] = []
     for path in _repo.tracked_files(root):
         rel = path.relative_to(root).as_posix()
-        if _excluded(rel, allow["excluded_paths"]) or not _is_text(path):
+        if _excluded(rel, allow["excluded_paths"]) or path.suffix.lower() in BINARY_SUFFIXES:
+            continue
+        data = path.read_bytes()
+        known = _is_text(path)
+        if not known and b"\0" in data:
             continue
         try:
-            text = path.read_text(encoding="utf-8")
+            text = data.decode("utf-8")
         except UnicodeDecodeError:
-            findings.append(
-                Finding(rel, 0, "undecodable", "text file is not UTF-8; cannot be checked")
-            )
+            if known:
+                findings.append(
+                    Finding(rel, 0, "undecodable", "text file is not UTF-8; cannot be checked")
+                )
             continue
         findings += scan_text(rel, text)
     return findings
