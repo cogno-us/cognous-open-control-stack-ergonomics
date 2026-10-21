@@ -340,8 +340,10 @@ def test_real_replay_bundle_corruption_exits_2(ws: Path) -> None:
 
 @pytest.mark.integration
 @pytest.mark.usefixtures("stack")
-def test_real_component_validator_is_version_blind_so_the_registry_matters(ws: Path) -> None:
-    """arb validate accepts any bundle_version string; cognous-ocs refuses unknown ones first."""
+def test_real_component_validator_refuses_unknown_bundle_version_and_the_registry_still_decides(
+    ws: Path,
+) -> None:
+    """arb validate refuses an unknown bundle_version (E002, Replay #71); the registry also does."""
     import subprocess
     import sys
 
@@ -349,10 +351,9 @@ def test_real_component_validator_is_version_blind_so_the_registry_matters(ws: P
     doc["bundle_version"] = "9.9.9"
     name = write(ws, "b.json", doc)
     arb = Path(sys.executable).parent / "arb"
-    assert (
-        subprocess.run([str(arb), "validate", name], check=False, capture_output=True).returncode
-        == 0
-    )
+    proc = subprocess.run([str(arb), "validate", name], check=False, capture_output=True)
+    assert proc.returncode == 1
+    assert b"E002" in proc.stdout
     assert main(["validate", name, "--kind", "replay-bundle"]) == 2
 
 
