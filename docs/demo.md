@@ -14,6 +14,8 @@ It is reversible by repinning: set the four lines of the `stack` extra in `pypro
 
 Update 2026-10-22 (pin move to the hub lock at hub commit `f413d1a7274d`). The four pins were moved to the entries in the hub `component-lock.json` at that commit (lock sha256 `71952371c312a64f322d45f792866f063677f5c1c9cdf0facc353229cf9c8f4d`), and `provenance.json` was regenerated with `tools/derive_fixtures.py`. The bundled fixture files are byte-identical to before; only the recorded commits, the hub commit and the lock digest changed. The demo remains a synthetic, offline run that does not authorize anything, stays on HOLD and makes no production claim. One test that documented the replay-bundle validator accepting an unknown `bundle_version` no longer holds at the new replay-bundle pin, which refuses unknown versions by default (cogno-us/cognous-replay-bundle#71); see the pull request for that finding.
 
+Update 2026-10-22 (second pin move, to the hub lock at hub commit `ff165a1df090`). Control plane, replay bundle and evidence pack were moved to the entries in the hub `component-lock.json` at that commit (lock sha256 `dcd3ab9e4e737c7e50f4bc38c2439438f156da64c9eb1e46725f477973da59ff`); the action manifest pin is unchanged. `provenance.json` was regenerated with `tools/derive_fixtures.py`. The bundled fixture files are byte-identical to before; only the recorded commits, the hub commit and the lock digest changed. The demo remains a synthetic, offline run that does not authorize anything, stays on HOLD and makes no production claim.
+
 ## What runs
 
 Each step is the component's own public command, run in a subprocess with a minimal environment. `cognous-ocs` asserts every exit code and never imports component code.

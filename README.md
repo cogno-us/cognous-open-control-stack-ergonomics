@@ -69,9 +69,9 @@ cognous-ocs 0.1.0
 cli-contract 0.1.0
 bundled-example customer-service 0.2.0
 bundled-component aam cogno-us/cognous-action-manifest@fa170815ef96
-bundled-component acp cogno-us/cognous-control-plane@e77fe0ee8714
-bundled-component arb cogno-us/cognous-replay-bundle@53c0cd60d565
-bundled-component agep cogno-us/cognous-governance-evidence-pack@99ba3211450b
+bundled-component acp cogno-us/cognous-control-plane@0a41faa97269
+bundled-component arb cogno-us/cognous-replay-bundle@028f63d1c001
+bundled-component agep cogno-us/cognous-governance-evidence-pack@a3ebbb90559a
 ```
 
 `demo` exits 0 and its first lines read:
@@ -131,9 +131,9 @@ The four component pins are in `src/cognous_ocs/lock.py` and in the `stack` extr
 | Layer | Command | Lock key | Pinned here | Hub lock | Same |
 |---|---|---|---|---|---|
 | declare | `aam` | `action_manifest` | `fa170815ef96` | `fa170815ef96` | yes |
-| control | `acp` | `control_plane` | `e77fe0ee8714` | `e77fe0ee8714` | yes |
-| replay | `arb` | `replay_bundle` | `53c0cd60d565` | `53c0cd60d565` | yes |
-| evidence | `agep` | `governance_evidence_pack` | `99ba3211450b` | `99ba3211450b` | yes |
+| control | `acp` | `control_plane` | `0a41faa97269` | `0a41faa97269` | yes |
+| replay | `arb` | `replay_bundle` | `028f63d1c001` | `028f63d1c001` | yes |
+| evidence | `agep` | `governance_evidence_pack` | `a3ebbb90559a` | `a3ebbb90559a` | yes |
 
 <!-- pins-table:end -->
 
