@@ -141,3 +141,11 @@ def test_prod_shorthand_is_flagged(text: str) -> None:
 )
 def test_prod_shorthand_has_no_false_positives(text: str) -> None:
     assert "production-ready" not in rules(text)
+
+
+def test_tag_pattern_does_not_backtrack_on_long_hyphen_runs() -> None:
+    import time
+
+    start = time.perf_counter()
+    cb.scan_text("x.md", "<A" + "-" * 5000 + "!")
+    assert time.perf_counter() - start < 2

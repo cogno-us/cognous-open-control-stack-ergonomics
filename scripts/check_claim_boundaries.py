@@ -57,7 +57,7 @@ HTML_ELEMENTS = frozenset(
     track tt u ul var video wbr svg g path circle rect line polyline polygon ellipse text tspan
     defs use symbol math mi mn mo ms mtext mrow mfrac msup msub""".split()
 )
-TAG = re.compile(r"</?([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9._-]*)*)(?=[\s/>])[^<>\n]*>")
+TAG = re.compile(r"</?([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9._]+)*)(?=[\s/>])[^<>\n]*>")
 COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 MARKDOWN_MARKS = re.compile(r"[*`~\\]")
 ENTITY = re.compile(r"&(?:#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});")
