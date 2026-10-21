@@ -32,7 +32,7 @@ RULES: dict[str, re.Pattern[str]] = {
     "compliant": re.compile(r"\bcompl(?:iant|iance|y|ies|ied|ying)\b"),
     "production-ready": re.compile(
         rf"\b(?:production|prod|deployment|deploy|enterprise|audit){SEP}(?:ready|grade|quality|worthy)\b"
-        rf"|\bready{SEP}for{SEP}(?:production|deployment)\b"
+        rf"|\bready{SEP}for{SEP}(?:production|prod|deployment)\b"
         rf"|\b(?:safe|fit|approved|cleared|suitable){SEP}for{SEP}(?:production|prod|deployment)\b"
     ),
     "attested": re.compile(
@@ -43,7 +43,23 @@ RULES: dict[str, re.Pattern[str]] = {
 # other combining marks (Mn, after decomposition), and the markup that splits words in Markdown
 # and HTML. They are dropped before matching.
 IGNORABLE = {"Cf", "Mn"}
-MARKUP = re.compile(r"<!--.*?-->|</?[A-Za-z][^<>]*>|[*`~\\]", re.DOTALL)
+# A tag is stripped only when its name is a known HTML (or SVG/MathML) element, or a custom
+# element name (contains a hyphen), and it stays on one line. Prose such as "if a<b ... c>d" is
+# never swallowed as a tag; and scan_text also matches on the text with no tag stripped at all.
+HTML_ELEMENTS = frozenset(
+    """a abbr acronym address area article aside audio b base bdi bdo big blockquote body br
+    button canvas caption center cite code col colgroup data datalist dd del details dfn dialog
+    dir div dl dt em embed fieldset figcaption figure font footer form frame frameset h1 h2 h3 h4
+    h5 h6 head header hgroup hr html i iframe img input ins kbd label legend li link main map
+    mark marquee menu meta meter nav noscript object ol optgroup option output p param picture
+    pre progress q rp rt ruby s samp script search section select slot small source span strike
+    strong style sub summary sup table tbody td template textarea tfoot th thead time title tr
+    track tt u ul var video wbr svg g path circle rect line polyline polygon ellipse text tspan
+    defs use symbol math mi mn mo ms mtext mrow mfrac msup msub""".split()
+)
+TAG = re.compile(r"</?([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9._]+)*)(?=[\s/>])[^<>\n]*>")
+COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+MARKDOWN_MARKS = re.compile(r"[*`~\\]")
 ENTITY = re.compile(r"&(?:#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});")
 # Latin lookalikes from Cyrillic, Greek, Armenian and Latin-extended letters, applied after
 # NFKC and casefold. The sibling verifier repository's copy of this script uses the same table.
@@ -115,6 +131,22 @@ LOOKALIKES = str.maketrans(
         "ᴠ": "v",
         "ᴡ": "w",
         "ᴢ": "z",
+        # small capitals and other IPA letters (scan 5)
+        "ᴀ": "a",
+        "ʙ": "b",
+        "ᴄ": "c",
+        "ꜰ": "f",
+        "ɢ": "g",
+        "ʜ": "h",
+        "ɪ": "i",
+        "ᴊ": "j",
+        "ᴋ": "k",
+        "ʟ": "l",
+        "ᴍ": "m",
+        "ꜱ": "s",
+        "ʏ": "y",
+        "ɛ": "e",
+        "ɔ": "o",
     }
 )
 TEXT_SUFFIXES = {
@@ -152,11 +184,12 @@ def _fold_entities(text: str) -> str:
     return ENTITY.sub(one, text)
 
 
-def _normalise(text: str) -> tuple[str, list[int]]:
+def _normalise(text: str, *, strip_tags: bool = True) -> tuple[str, list[int]]:
     """Fold text for matching; return it and each char's source line.
 
     Order: entities, NFKC, decompose, casefold, drop ignorable characters, unify dashes and
-    minus signs, fold Latin lookalikes, drop Markdown and HTML markup.
+    minus signs, fold Latin lookalikes, drop Markdown and HTML markup. With strip_tags false
+    only comments and Markdown marks are dropped, so text between a "<" and a later ">" survives.
     """
     chars: list[str] = []
     lines: list[int] = []
@@ -172,15 +205,21 @@ def _normalise(text: str) -> tuple[str, list[int]]:
                     ch = "-"
                 chars.append(ch.translate(LOOKALIKES))
                 lines.append(line)
-    return _drop_markup("".join(chars), lines)
+    return _drop_markup("".join(chars), lines, strip_tags)
 
 
-def _drop_markup(norm: str, lines: list[int]) -> tuple[str, list[int]]:
+def _drop_markup(norm: str, lines: list[int], strip_tags: bool) -> tuple[str, list[int]]:
     keep = [True] * len(norm)
-    for m in MARKUP.finditer(norm):
-        for i in range(m.start(), m.end()):
-            # keep line breaks that sit inside a tag so later line numbers stay right
-            keep[i] = norm[i] == "\n"
+    spans = [m.span() for m in COMMENT.finditer(norm)]
+    spans += [m.span() for m in MARKDOWN_MARKS.finditer(norm)]
+    if strip_tags:
+        spans += [
+            m.span() for m in TAG.finditer(norm) if m.group(1) in HTML_ELEMENTS or "-" in m.group(1)
+        ]
+    for start, end in spans:
+        for i in range(start, end):
+            # keep line breaks that sit inside a comment so later line numbers stay right
+            keep[i] = keep[i] and norm[i] == "\n"
     return (
         "".join(c for c, k in zip(norm, keep, strict=True) if k),
         [n for n, k in zip(lines, keep, strict=True) if k],
@@ -189,14 +228,15 @@ def _drop_markup(norm: str, lines: list[int]) -> tuple[str, list[int]]:
 
 def scan_text(path: str, text: str) -> list[Finding]:
     """All rule matches in text. Phrases split across lines or by hyphen variants still match."""
-    norm, line_of = _normalise(text)
+    views = [_normalise(text), _normalise(text, strip_tags=False)]
     source_lines = unicodedata.normalize("NFKC", text).split("\n")
     found: list[Finding] = []
-    for rule, pattern in RULES.items():
-        for m in pattern.finditer(norm):
-            ln = line_of[m.start()] if m.start() < len(line_of) else len(source_lines)
-            raw = source_lines[ln - 1] if ln - 1 < len(source_lines) else ""
-            found.append(Finding(path, ln, rule, raw.strip()))
+    for norm, line_of in views:
+        for rule, pattern in RULES.items():
+            for m in pattern.finditer(norm):
+                ln = line_of[m.start()] if m.start() < len(line_of) else len(source_lines)
+                raw = source_lines[ln - 1] if ln - 1 < len(source_lines) else ""
+                found.append(Finding(path, ln, rule, raw.strip()))
     return sorted(set(found), key=lambda f: (f.path, f.line, f.rule))
 
 

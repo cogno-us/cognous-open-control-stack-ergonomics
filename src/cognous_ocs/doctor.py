@@ -147,13 +147,18 @@ def check_paths(wf: Workflow) -> Check:
         path, why = _confined(wf.base, wf.settings[key])
         if path is None:
             problems.append(f"'{key}' {why}")
-        elif key == "manifest":
+            continue
+        if key == "manifest":
             wf.manifest_path = path
         elif key == "policy":
             wf.policy_path = path
+        if not _plain_file(path):  # named and confined, but there is nothing to validate
+            problems.append(f"'{key}' is missing or not a plain file")
     if problems:
         return Check("OCS_PATHS", FAILED, "; ".join(problems), f"fix the paths in {WORKFLOW_FILE}")
-    return Check("OCS_PATHS", OK, "manifest, policy and run record paths stay inside the workflow")
+    return Check(
+        "OCS_PATHS", OK, "manifest, policy and run record are plain files inside the workflow"
+    )
 
 
 def _action_problems(doc: dict[str, Any]) -> list[str]:

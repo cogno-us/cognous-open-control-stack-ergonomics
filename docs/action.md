@@ -54,6 +54,8 @@ Output under `--out`: `ci-summary.json` (the envelope), `ci-summary.md`, `report
 
 A pass says every listed artifact passed its pinned component validator. It does not prove that the evidence matches what really happened, that a run record came from the control plane, that a workflow is authorised to run, or anything about deployment or release status.
 
+Update 2026-10-22: a manifest, policy file or run record that `workflow.json` names but that is missing, is a directory, is a symlink or escapes the workflow directory is no longer skipped. The doctor `OCS_PATHS` check fails for it, and `ci` adds a failing step labelled `... (reference)` (outcome `invalid`, reason code `OCS_PATHS`), so the run cannot pass while a listed artifact was not validated.
+
 ## Tests
 
 `tests/test_ci.py` and `tests/test_action.py` cover the profile, version binding, confinement (including a parity test against `cognous_ocs.paths`), gating and the files written. The workflow `.github/workflows/ci.yml` runs the action on the sample repository (job `action-sample`) and runs negative jobs that must fail: a version mismatch exits 2, a missing profile is refused, and an output path outside the workspace is refused (job `action-negative`).

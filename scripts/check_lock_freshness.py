@@ -44,6 +44,35 @@ def check_requirement_locks(root: Path, extras: dict[str, list[str]]) -> list[st
     return errors
 
 
+GIT_PIN = re.compile(
+    r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*@\s*git\+https://github\.com/([^@\s]+)@([0-9A-Fa-f]+)", re.M
+)
+
+
+def check_stack_requirements(root: Path, want: dict[str, tuple[str, str]]) -> list[str]:
+    """requirements/stack.txt carries exactly the lock's git pins: same repository and sha, no extras."""
+    path = root / "requirements" / "stack.txt"
+    if not path.is_file():
+        return []  # check_requirement_locks reports the missing file
+    text = path.read_text(encoding="utf-8")
+    have = {m[0]: (m[1], m[2]) for m in GIT_PIN.findall(text)}
+    errors = [
+        f"requirements/stack.txt pin for {dist} differs from cognous_ocs.lock"
+        for dist, pin in want.items()
+        if have.get(dist) != pin
+    ]
+    errors += [
+        f"requirements/stack.txt has a git pin for {dist} that cognous_ocs.lock does not list"
+        for dist in sorted(set(have) - set(want))
+    ]
+    shas = re.findall(r"@([0-9A-Fa-f]{40})\b", text)
+    errors += [
+        f"requirements/stack.txt names commit {sha[:12]} that cognous_ocs.lock does not list"
+        for sha in sorted({x for x in shas if x not in {c[1] for c in want.values()}})
+    ]
+    return errors
+
+
 def check(root: Path) -> list[str]:
     sys.path.insert(0, str(root / "src"))
     from cognous_ocs.lock import COMPONENTS
@@ -68,6 +97,9 @@ def check(root: Path) -> list[str]:
             for c in COMPONENTS.values()
             if c.sha not in text
         ]
+    errors += check_stack_requirements(
+        root, {c.distribution: (c.repository, c.sha) for c in COMPONENTS.values()}
+    )
     errors += check_requirement_locks(root, project["optional-dependencies"])
     return errors
 
