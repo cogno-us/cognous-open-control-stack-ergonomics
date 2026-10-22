@@ -26,6 +26,6 @@ These describe what `cognous-ocs` itself emits. Their `$id` urns (`urn:ocs:schem
 `make schemas` (`scripts/check_schema_snapshots.py`) fails when:
 
 - a `schemas/vN/` directory is not listed in `schemas/SNAPSHOTS.json`, a listed one is missing, or any file differs from its recorded hash or is added or removed;
-- a `v*` git tag exists and a `schemas/vN/` file present at that tag differs now, or was deleted. Editing the manifest cannot excuse this: the tag is the reference. There are no tags yet, so today the manifest is the only reference; the tag comparison is covered by tests against a temporary repository.
+- a `v*` git tag exists and a `schemas/vN/` file present at that tag differs now, or was deleted. Editing the manifest cannot excuse this: the tag is the reference. There is no `v*` tag yet (the review marker tag `review-v0.1-g8-r10-20261022` does not match `v*`, is not a released reference and does not switch this check on), so today the manifest is the only reference; the tag comparison is covered by tests against a temporary repository.
 
 To change a snapshot after it is recorded, add `schemas/v2/` and run `python scripts/check_schema_snapshots.py --record v2`. `--record` refuses to touch a snapshot that is already recorded. The tests validate real `cognous-ocs` output (pass, invalid and error results, and a written diagnostics file) against these schemas, so a change to the envelope without a new snapshot fails the build.
