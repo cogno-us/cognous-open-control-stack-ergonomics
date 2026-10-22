@@ -23,7 +23,7 @@ pip install -e ".[dev,stack]"
 | `make docs` | Local links and anchors resolve, every docs page is linked from the README, versions and the command and exit-code tables match the code. |
 | `make claims` | The claim-boundary check (below). |
 | `make examples` | Bundled example fixtures are byte-equal to the hashes in `provenance.json`; no stray or missing file. |
-| `make schemas` | Every `schemas/vN/` snapshot matches the hashes in `schemas/SNAPSHOTS.json`; once a `v*` git tag exists, each snapshot directory present at the tag is byte-identical to it. See [schemas.md](schemas.md). |
+| `make schemas` | Every `schemas/vN/` snapshot matches the hashes in `schemas/SNAPSHOTS.json`; once a `v*` git tag exists, each snapshot directory present at the tag is byte-identical to it (the review marker tag `review-v0.1-g8-r10-20261022` is not a `v*` tag, not a released action reference and does not switch this on). See [schemas.md](schemas.md). |
 | `make actions` | Third-party actions pinned by commit SHA with the release tag in a comment, no `*-latest` runner label, the composite action's inputs and upload paths, and its release version equal to the package version. See [action.md](action.md). |
 | `make build` | Builds the wheel and sdist into `dist/`. |
 | `make release-check` | `check`, then `wheel-check` (required and forbidden wheel members, the `cognous-ocs` console script and no `ocs` script, a `cognous_ocs-*` dist-info, claim scan of the shipped files) and `smoke` (clean virtualenv install of the wheel, `cognous-ocs --version` working and no `ocs` script installed, then the demo run under `unshare -n`). `smoke` fails if no network-namespace tool works; `OCS_SMOKE_ALLOW_NO_NETNS=1` runs it without isolation, never in CI. |

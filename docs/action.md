@@ -12,7 +12,7 @@
     evidence-pack: path/to/evidence-pack.json
 ```
 
-The action installs this checkout (distribution `cognous-ocs`, extra `stack`) into its own venv and runs the `cognous-ocs` console script from it. Nothing is published from this repository, so there is no released action reference yet; use a commit SHA of a checkout you control, or `./.github/actions/ocs` in this repository.
+The action installs this checkout (distribution `cognous-ocs`, extra `stack`) into its own venv and runs the `cognous-ocs` console script from it. Nothing is published from this repository, so there is no released action reference yet. The annotated tag `review-v0.1-g8-r10-20261022` is a review marker only: it is not a version, not a released action reference and not an authorization, and it does not change `release-version.txt`. Use a commit SHA of a checkout you control, or `./.github/actions/ocs` in this repository.
 
 ## Inputs
 
