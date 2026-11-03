@@ -12,7 +12,7 @@
     evidence-pack: path/to/evidence-pack.json
 ```
 
-The action installs this checkout (distribution `cognous-ocs`, extra `stack`) into its own venv and runs the `cognous-ocs` console script from it. Nothing is published from this repository, so there is no released action reference yet. The annotated tag `review-v0.1-g8-r10-20261022` is a review marker only: it is not a version, not a released action reference and not an authorization, and it does not change `release-version.txt`. Use a commit SHA of a checkout you control, or `./.github/actions/ocs` in this repository.
+The action installs this checkout into its own venv from the committed locks in `requirements/` only (hashed `build.txt` and `stack.txt` with `--require-hashes --no-deps --no-build-isolation`, then the four first-party components from `stack-vcs.txt` pinned by full commit SHA with `--no-deps`, then the checkout with `--no-deps`; no free dependency resolution, see [testing](testing.md#locks-one-per-extra)) and runs the `cognous-ocs` console script from it. Nothing is published from this repository, so there is no released action reference yet. The annotated tag `review-v0.1-g8-r10-20261022` is a review marker only: it is not a version, not a released action reference and not an authorization, and it does not change `release-version.txt`. Use a commit SHA of a checkout you control, or `./.github/actions/ocs` in this repository.
 
 ## Inputs
 
@@ -29,7 +29,7 @@ The action installs this checkout (distribution `cognous-ocs`, extra `stack`) in
 | `upload-full-artifacts` | `false` | Also upload the whole output directory, including copies of the raw manifest and run record. |
 | `retention-days` | `14` | Artifact retention, 1 to 90. |
 | `upload-name` | `ocs-reports` | Artifact name; the full upload appends `-full`. |
-| `install` | `source` | `source` installs the `cognous-ocs` in the action's own checkout with the pinned component extra; `preinstalled` uses the `cognous-ocs` on `PATH`. |
+| `install` | `source` | `source` installs the `cognous-ocs` in the action's own checkout and the pinned components from the committed locks; `preinstalled` uses the `cognous-ocs` on `PATH`. |
 
 Outputs: `exit-code` (the exit code of `cognous-ocs ci`) and `out-dir`. The action step itself exits with that code.
 

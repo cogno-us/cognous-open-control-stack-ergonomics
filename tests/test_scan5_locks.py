@@ -1,4 +1,4 @@
-"""Scan 5 C-T2-2: requirements/stack.txt must carry exactly the lock's component pins."""
+"""Scan 5 C-T2-2: requirements/stack-vcs.txt must carry exactly the lock's component pins."""
 
 from __future__ import annotations
 
@@ -19,14 +19,14 @@ def repo_copy(tmp_path: Path) -> Path:
     (root / "src").mkdir()
     for name in ("pyproject.toml",):
         (root / name).write_bytes((REPO_ROOT / name).read_bytes())
-    (root / "requirements" / "stack.txt").write_bytes(
-        (REPO_ROOT / "requirements" / "stack.txt").read_bytes()
+    (root / "requirements" / "stack-vcs.txt").write_bytes(
+        (REPO_ROOT / "requirements" / "stack-vcs.txt").read_bytes()
     )
     return root
 
 
 def stack(root: Path) -> Path:
-    return root / "requirements" / "stack.txt"
+    return root / "requirements" / "stack-vcs.txt"
 
 
 def test_repository_stack_requirements_match_the_lock() -> None:

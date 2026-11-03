@@ -90,8 +90,16 @@ runs:
       shell: bash
       run: |
         root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
-        python3 -m venv "$RUNNER_TEMP/cognous-ocs-action-venv"
-        "$RUNNER_TEMP/cognous-ocs-action-venv/bin/python" -m pip install --quiet "$root[stack]"
+        venv="$RUNNER_TEMP/cognous-ocs-action-venv"
+        python3 -m venv "$venv"
+        # Only the committed locks are consumed (no free resolution): the hashed build toolchain,
+        # the hashed PyPI dependencies, the first-party components pinned by full commit SHA
+        # (pip cannot hash VCS requirements, so they are a separate --no-deps step), then this
+        # checkout itself without dependencies. Nothing is built with build isolation.
+        "$venv/bin/python" -m pip install --quiet --require-hashes --no-deps --no-build-isolation -r "$root/requirements/build.txt"
+        "$venv/bin/python" -m pip install --quiet --require-hashes --no-deps --no-build-isolation -r "$root/requirements/stack.txt"
+        "$venv/bin/python" -m pip install --quiet --no-deps --no-build-isolation -r "$root/requirements/stack-vcs.txt"
+        "$venv/bin/python" -m pip install --quiet --no-deps --no-build-isolation "$root"
         echo "OCS_ACTION_BIN=$RUNNER_TEMP/cognous-ocs-action-venv/bin/cognous-ocs" >> "$GITHUB_ENV"
 
     - id: run

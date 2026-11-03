@@ -1,4 +1,4 @@
-"""Scan 6 T1-8: requirements/stack.txt git pins must each be one strict line matching the lock."""
+"""Scan 6 T1-8: requirements/stack-vcs.txt git pins must each be one strict line matching the lock."""
 
 from __future__ import annotations
 
@@ -22,13 +22,13 @@ def stack_root(tmp_path: Path) -> Path:
 
 
 def run(root: Path, text: str) -> list[str]:
-    (root / "requirements" / "stack.txt").write_text(text, encoding="utf-8")
+    (root / "requirements" / "stack-vcs.txt").write_text(text, encoding="utf-8")
     errors: list[str] = lock.check_stack_requirements(root, WANT)
     return errors
 
 
 def real_text() -> str:
-    return (REPO_ROOT / "requirements" / "stack.txt").read_text(encoding="utf-8")
+    return (REPO_ROOT / "requirements" / "stack-vcs.txt").read_text(encoding="utf-8")
 
 
 def test_real_stack_txt_is_clean(stack_root: Path) -> None:

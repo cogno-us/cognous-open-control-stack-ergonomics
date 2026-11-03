@@ -10,7 +10,9 @@ permissions:
 
 # The runner image is pinned: `ubuntu-latest` moves to Ubuntu 26 on 2026-10-19. Move this label
 # deliberately, in its own change. Third-party actions are pinned by commit SHA with the release
-# tag in a comment (cli-contract section 9); each pinned release runs on Node 24.
+# tag in a comment (cli-contract section 9); each pinned release runs on Node 24. Python
+# dependencies are installed only from the committed locks (requirements/, docs/testing.md); the
+# policy is enforced by scripts/check_dependency_integrity.py (make lock).
 jobs:
   checks:
     runs-on: ubuntu-24.04
@@ -25,8 +27,12 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (components pinned in cognous_ocs.lock)
-        run: python -m pip install -e ".[dev,stack]"
+      - name: Install (hashed PyPI locks, then the first-party components pinned by SHA)
+        run: |
+          python -m pip install --require-hashes --no-deps --no-build-isolation -r requirements/dev.txt
+          python -m pip install --require-hashes --no-deps --no-build-isolation -r requirements/stack.txt
+          python -m pip install --no-deps --no-build-isolation -r requirements/stack-vcs.txt
+          python -m pip install --no-deps --no-build-isolation -e .
       - name: make check (lint, types, lock, tests with sockets off, docs, claims, examples, build)
         run: make check
 
@@ -40,8 +46,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
-      - name: Install build tooling
-        run: python -m pip install -e ".[dev]"
+      - name: Install build tooling (hashed dev lock, no build isolation)
+        run: |
+          python -m pip install --require-hashes --no-deps --no-build-isolation -r requirements/dev.txt
+          python -m pip install --no-deps --no-build-isolation -e .
       - name: Build, check wheel contents, clean-venv smoke test (demo under unshare -n)
         run: make build wheel-check smoke
 
@@ -57,7 +65,12 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
-      - run: python -m pip install -e ".[dev,stack]"
+      - name: Install (hashed PyPI locks, then the first-party components pinned by SHA)
+        run: |
+          python -m pip install --require-hashes --no-deps --no-build-isolation -r requirements/dev.txt
+          python -m pip install --require-hashes --no-deps --no-build-isolation -r requirements/stack.txt
+          python -m pip install --no-deps --no-build-isolation -r requirements/stack-vcs.txt
+          python -m pip install --no-deps --no-build-isolation -e .
       - name: make release-publish-check must fail on HOLD
         run: |
           set +e
@@ -129,7 +142,8 @@ jobs:
           rm -rf "$RUNNER_TEMP/other-ocs/.git"
           sed -i 's/^__version__ = "[^"]*"/__version__ = "9.9.9"/' "$RUNNER_TEMP/other-ocs/src/cognous_ocs/__init__.py"
           python3 -m venv "$RUNNER_TEMP/other-venv"
-          "$RUNNER_TEMP/other-venv/bin/python" -m pip install --quiet "$RUNNER_TEMP/other-ocs"
+          "$RUNNER_TEMP/other-venv/bin/python" -m pip install --quiet --require-hashes --no-deps --no-build-isolation -r requirements/build.txt
+          "$RUNNER_TEMP/other-venv/bin/python" -m pip install --quiet --no-deps --no-build-isolation "$RUNNER_TEMP/other-ocs"
           "$RUNNER_TEMP/other-venv/bin/cognous-ocs" --version | head -n 1
           echo "$RUNNER_TEMP/other-venv/bin" >> "$GITHUB_PATH"
       - id: mismatch

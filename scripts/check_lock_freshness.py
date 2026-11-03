@@ -4,6 +4,12 @@ The pins are the current component mains, which differ from the hub component-lo
 until the hub lock is updated (see provenance.json and docs/demo.md). A stale or edited pin
 fails. Each extra needs requirements/<extra>.txt naming every dependency it declares (regenerate with
 uv, see docs/testing.md); any requirements*.lock file must mention every pinned commit.
+
+Lock integrity (not just names): every pin in a hashed `requirements/<name>.txt` carries
+well-formed, non-placeholder sha256 hashes and a version inside the range pyproject declares, so a
+zeroed hash or a pin edited to an impossible version fails. The four first-party components live
+in `requirements/stack-vcs.txt` (pip cannot hash VCS requirements; the full SHA is the pin).
+scripts/check_dependency_integrity.py covers the install commands that consume these files.
 """
 
 from __future__ import annotations
@@ -15,6 +21,7 @@ import tomllib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _lockfile  # noqa: E402
 import _repo  # noqa: E402
 
 
@@ -23,32 +30,48 @@ def _name(requirement: str) -> str:
 
 
 def check_requirement_locks(root: Path, extras: dict[str, list[str]]) -> list[str]:
-    """requirements/<extra>.txt exists and names every dependency its extra declares."""
+    """requirements/<extra>.txt exists, names every dependency its extra declares, and is intact.
+
+    Intact means: strict hashed pins (see _lockfile.parse_hashed_lock) whose versions satisfy the
+    pyproject ranges. A dependency may also be named in requirements/<extra>-vcs.txt.
+    """
     errors: list[str] = []
     for extra, requirements in sorted(extras.items()):
         lock = root / "requirements" / f"{extra}.txt"
         if not lock.is_file():
             errors.append(f"requirements/{extra}.txt is missing")
             continue
+        text = lock.read_text(encoding="utf-8")
+        vcs = root / "requirements" / f"{extra}-vcs.txt"
+        if vcs.is_file():
+            text += "\n" + vcs.read_text(encoding="utf-8")
         locked = {
-            _name(m)
-            for m in re.findall(
-                r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:==| @ )", lock.read_text(encoding="utf-8"), re.M
-            )
+            _name(m) for m in re.findall(r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:==| @ )", text, re.M)
         }
         errors += [
             f"requirements/{extra}.txt does not lock {_name(r)}; regenerate it (docs/testing.md)"
             for r in requirements
             if _name(r) not in locked
         ]
+        parsed = _lockfile.parse_hashed_lock(
+            f"requirements/{extra}.txt", lock.read_text(encoding="utf-8")
+        )
+        errors += parsed.errors
+        errors += [
+            e
+            for e in _lockfile.check_ranges(f"requirements/{extra}.txt", parsed, requirements)
+            if "does not lock" not in e  # reported above, also for -vcs.txt names
+        ]
+    build = root / "requirements" / "build.txt"
+    if build.is_file():
+        errors += _lockfile.parse_hashed_lock(
+            "requirements/build.txt", build.read_text(encoding="utf-8")
+        ).errors
     return errors
 
 
 GIT_PIN = re.compile(
     r"([A-Za-z0-9][A-Za-z0-9._-]*) @ git\+https://github\.com/(cogno-us/[A-Za-z0-9._-]+)@([0-9a-f]{40})"
-)
-_INDEXED_PIN = re.compile(
-    r"[A-Za-z0-9][A-Za-z0-9._-]*==[A-Za-z0-9._+!]+(?:\s+--hash=sha256:[0-9a-f]{64})*\s*"
 )
 _COMMENT = re.compile(r"\s*#")
 
@@ -84,18 +107,17 @@ def _logical_lines(text: str) -> list[tuple[int, str, bool]]:
 
 
 def check_stack_requirements(root: Path, want: dict[str, tuple[str, str]]) -> list[str]:
-    """requirements/stack.txt carries exactly the lock's git pins, one strict line each.
+    """requirements/stack-vcs.txt carries exactly the lock's git pins, one strict line each.
 
     Allow-list: after joining backslash continuations as pip does, every logical line must be blank, a
-    comment, exactly `<dist> @ git+https://github.com/cogno-us/<repo>@<40 lowercase hex>`, or an indexed
-    `name==version` pin optionally followed by `--hash=sha256:<64 hex>` options (the uv-generated form).
-    Anything else (URLs, paths, other VCS schemes, environment references, options, indented
-    non-comment lines, a trailing backslash) is refused. Each lock component appears exactly once with
+    comment, or exactly `<dist> @ git+https://github.com/cogno-us/<repo>@<40 lowercase hex>`.
+    Anything else (URLs, paths, other VCS schemes, environment references, options, indexed pins,
+    indented non-comment lines, a trailing backslash) is refused. Each lock component appears exactly once with
     the lock's repository and sha.
     """
-    path = root / "requirements" / "stack.txt"
+    path = root / "requirements" / "stack-vcs.txt"
     if not path.is_file():
-        return []  # check_requirement_locks reports the missing file
+        return ["requirements/stack-vcs.txt is missing; the first-party component pins live there"]
     errors: list[str] = []
     seen: dict[str, list[tuple[str, str]]] = {}
     for number, line, open_end in _logical_lines(path.read_text(encoding="utf-8")):
@@ -104,27 +126,29 @@ def check_stack_requirements(root: Path, want: dict[str, tuple[str, str]]) -> li
         match = None if open_end else GIT_PIN.fullmatch(line)
         if match:
             seen.setdefault(match[1], []).append((match[2], match[3]))
-        elif open_end or not _INDEXED_PIN.fullmatch(line):
+        else:
             token = (line.split() or ["?"])[0][:60]
             errors.append(
-                f"requirements/stack.txt line {number} ({token}) is not a strict "
-                "`<dist> @ git+https://github.com/cogno-us/<repo>@<40 hex>` pin or `name==version` pin"
+                f"requirements/stack-vcs.txt line {number} ({token}) is not a strict "
+                "`<dist> @ git+https://github.com/cogno-us/<repo>@<40 hex>` pin"
             )
     for dist, pin in want.items():
         pins = seen.get(dist, [])
         if len(pins) > 1:
             errors.append(
-                f"requirements/stack.txt pins {dist} {len(pins)} times; exactly one pin is allowed"
+                f"requirements/stack-vcs.txt pins {dist} {len(pins)} times; exactly one pin is allowed"
             )
         if pins != [pin]:
-            errors.append(f"requirements/stack.txt pin for {dist} differs from cognous_ocs.lock")
+            errors.append(
+                f"requirements/stack-vcs.txt pin for {dist} differs from cognous_ocs.lock"
+            )
     listed = {c[1] for c in want.values()}
     errors += [
-        f"requirements/stack.txt names commit {sha[:12]} that cognous_ocs.lock does not list"
+        f"requirements/stack-vcs.txt names commit {sha[:12]} that cognous_ocs.lock does not list"
         for sha in sorted({p[1] for pins in seen.values() for p in pins} - listed)
     ]
     errors += [
-        f"requirements/stack.txt has a git pin for {dist} that cognous_ocs.lock does not list"
+        f"requirements/stack-vcs.txt has a git pin for {dist} that cognous_ocs.lock does not list"
         for dist in sorted(set(seen) - set(want))
     ]
     return errors

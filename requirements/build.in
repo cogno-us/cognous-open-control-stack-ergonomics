@@ -1,0 +1,8 @@
+# Build toolchain inputs. Every build in CI and in the composite action runs with
+# --no-build-isolation against exactly these locked versions (requirements/build.txt, also
+# contained in requirements/dev.txt). hatchling builds this repository; setuptools and wheel are
+# the declared backends of the four first-party stack components (installed from VCS by SHA).
+hatchling
+editables
+setuptools
+wheel
