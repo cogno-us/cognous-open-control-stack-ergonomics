@@ -8,6 +8,8 @@
   named in docs/action.md.
 - The minimal upload names files and the two report directories, never the whole output
   directory; retention defaults to 14 days; the full upload defaults to off.
+- every upload is gated on the current-run marker (the `gate` step, `verify_run.py`), and the run
+  nonce reaches both the CLI and the gate;
 - release-version.txt equals the package version (cognous_ocs.__version__ and pyproject.toml).
 """
 
@@ -122,6 +124,19 @@ def check_action(root: Path) -> list[str]:
             errors.append(
                 "the minimal upload must name only summaries, diagnostics, evidence/ and reports/"
             )
+    gate = next((s for s in steps if s.get("id") == "gate"), None)
+    if gate is None or "verify_run.py" not in str(gate.get("run", "")):
+        errors.append("no gate step running verify_run.py")
+    elif "OCS_RUN_NONCE" not in (gate.get("env") or {}):
+        errors.append("the gate step does not receive the run nonce")
+    run_step = next((s for s in steps if s.get("id") == "run"), None)
+    if run_step is None or "OCS_RUN_NONCE" not in (run_step.get("env") or {}):
+        errors.append("the run step does not pass the run nonce to the CLI")
+    for step in steps:
+        if str(step.get("uses", "")).startswith("actions/upload-artifact@") and (
+            "steps.gate.outputs.publish == 'true'" not in str(step.get("if", ""))
+        ):
+            errors.append(f"step {step.get('id', '?')}: an upload must be gated on the run marker")
     docs = root / "docs" / "action.md"
     doc_text = docs.read_text(encoding="utf-8") if docs.is_file() else ""
     for name in sorted(inputs):

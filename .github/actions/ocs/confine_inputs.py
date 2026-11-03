@@ -11,6 +11,10 @@ script. It refuses (exit 2) and writes nothing outside the confined output direc
 - neither a strict evidence input nor the explicit non-assurance mode is chosen, or both are;
 - an enumerated or numeric input is out of range.
 
+Before the run it also clears any owned names already in the output directory (earlier output or
+files planted by the caller are never carried into this run) and generates the run nonce that the
+CLI records in `ci-summary.json` and `verify_run.py` requires before anything is uploaded.
+
 Messages are fixed text: an input value is never echoed (workflow-command injection).
 The path rules mirror `cognous_ocs.paths`; tests/test_action.py runs both on the same cases.
 """
@@ -22,6 +26,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import sys
 from pathlib import Path
 
@@ -198,8 +203,22 @@ def write_diagnostics(out: Path, code: str) -> None:
         os.close(dir_fd)
 
 
-def emit(values: dict[str, str], output_file: str | None) -> None:
+def reset_owned(out: Path) -> None:
+    """Remove the owned names from a (checked) output directory. A link is removed, never followed."""
+    if not out.is_dir() or out.is_symlink():
+        return
+    for child in out.iterdir():
+        if child.name not in OWNED:
+            continue
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+
+
+def emit(values: dict[str, str], output_file: str | None, nonce: str) -> None:
     lines = {
+        "run-nonce": nonce,
         "out-dir": values["OUT_DIR"],
         "report-mode": values["REPORT_MODE"],
         "retention-days": values["RETENTION_DAYS"],
@@ -231,7 +250,12 @@ def main(env: dict[str, str] | None = None) -> int:
         except (Refused, OSError):
             pass
         return 2
-    emit(values, env.get("GITHUB_OUTPUT"))
+    try:
+        reset_owned(Path(values["OUT_DIR"]))
+    except OSError:
+        sys.stderr.write("::error title=cognous-ocs action::earlier output could not be cleared\n")
+        return 2
+    emit(values, env.get("GITHUB_OUTPUT"), secrets.token_hex(16))
     return 0
 
 

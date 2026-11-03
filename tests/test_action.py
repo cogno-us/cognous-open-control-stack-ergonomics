@@ -309,6 +309,9 @@ def test_main_profile_refusal_is_exit_2(space: tuple[Path, Path], tmp_path: Path
 # the shell glue, run for real
 
 
+NONCE = "ab12" * 8
+
+
 def step_script(step_id: str) -> str:
     action = yaml.safe_load((ACTION / "action.yml").read_text())
     return str(next(s for s in action["runs"]["steps"] if s.get("id") == step_id)["run"])
@@ -336,7 +339,22 @@ def glue(tmp_path: Path, ws: Path) -> dict[str, str]:
         "OCS_NON_ASSURANCE": "false",
         "OCS_STRICT": "false",
         "OCS_ACTION_BIN": str(Path(sys.executable).parent / "cognous-ocs"),
+        "OCS_RUN_NONCE": NONCE,
     }
+
+
+def run_gate(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    full = {
+        "PATH": os.environ["PATH"],
+        "GITHUB_ACTION_PATH": str(ACTION),
+        "GITHUB_OUTPUT": env["GITHUB_OUTPUT"],
+        "GITHUB_STEP_SUMMARY": env["GITHUB_STEP_SUMMARY"],
+        "OCS_OUT_DIR": env["OCS_OUT_DIR"],
+        "OCS_RUN_NONCE": env.get("OCS_RUN_NONCE", ""),
+    }
+    return subprocess.run(
+        ["bash", "-c", step_script("gate")], env=full, capture_output=True, text=True, check=False
+    )
 
 
 def outputs(env: dict[str, str]) -> dict[str, str]:
@@ -349,6 +367,10 @@ def test_run_step_passes_with_the_real_stack_and_appends_the_summary(
     done = run_step("run", glue)
     assert done.returncode == 0, done.stdout + done.stderr
     assert outputs(glue)["exit-code"] == "0"
+    assert not Path(glue["GITHUB_STEP_SUMMARY"]).exists()  # the run step no longer appends it
+    gated = run_gate(glue)
+    assert gated.returncode == 0, gated.stderr
+    assert outputs(glue)["publish"] == "true"
     assert "## cognous-ocs ci" in Path(glue["GITHUB_STEP_SUMMARY"]).read_text()
     assert (Path(glue["OCS_OUT_DIR"]) / "evidence" / "evidence-pack.json").is_file()
     assert not (Path(glue["OCS_OUT_DIR"]) / "inputs").exists()
@@ -526,7 +548,8 @@ def test_workflow_runs_the_action_on_the_sample_and_has_negative_jobs() -> None:
     assert "examples/sample-repo/workflow" in sample
     assert "examples/sample-repo/evidence/evidence-pack.json" in sample
     negative = json.dumps(jobs["action-negative"])
-    for needle in ("continue-on-error", "OCS_VERSION", "9.9.9", "non-assurance", "/etc/ocs-out"):
+    needles = ("continue-on-error", "OCS_VERSION", "9.9.9", "non-assurance", "/etc/ocs-out")
+    for needle in (*needles, "neg-planted", "reports-published"):
         assert needle in negative
     pythons = jobs["checks"]["strategy"]["matrix"]["python-version"]
     assert pythons == ["3.11", "3.12", "3.13"]
@@ -548,3 +571,172 @@ def test_sample_drift_is_found(repo_copy: Path) -> None:
     assert any("policy.json: differs" in e for e in errors)
     assert any("extra.json: not part" in e for e in errors)
     assert any("evidence-pack.json: differs" in e for e in errors)
+
+
+# item 8, action layer: output is uploaded only when it carries this run's marker
+
+
+def plant_output(out: Path, *, summary: dict[str, Any] | None = None) -> None:
+    (out / "evidence").mkdir(parents=True)
+    (out / "evidence/evidence-pack.json").write_text('{"planted": "fake success"}\n')
+    body = summary if summary is not None else {"outcome": "pass", "planted": True}
+    (out / "ci-summary.json").write_text(json.dumps(body))
+    (out / "ci-summary.md").write_text("Outcome: **pass**\n")
+
+
+def marked(nonce: str) -> dict[str, Any]:
+    return {"outcome": "pass", "extensions": {"x-run": {"nonce": nonce}}}
+
+
+def gate_result(glue: dict[str, str]) -> str:
+    done = run_gate(glue)
+    assert done.returncode == 0, done.stderr
+    return outputs(glue)["publish"]
+
+
+def test_gate_refuses_a_planted_pass_without_the_marker(glue: dict[str, str]) -> None:
+    plant_output(Path(glue["OCS_OUT_DIR"]))
+    assert gate_result(glue) == "false"
+    assert not Path(glue["GITHUB_STEP_SUMMARY"]).exists()  # the planted summary is not appended
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [
+        marked("cd34" * 8),  # another run's nonce
+        {"outcome": "pass", "extensions": {"x-run": {}}},
+        {"outcome": "pass", "extensions": {"x-run": {"nonce": 5}}},
+        {"outcome": "pass", "extensions": {"x-run": "ab12" * 8}},
+        {"outcome": "pass", "nonce": "ab12" * 8},  # not under extensions["x-run"]
+        ["not", "an", "object"],
+    ],
+    ids=["other-nonce", "no-nonce", "numeric", "not-object", "wrong-place", "array"],
+)
+def test_gate_requires_the_exact_nonce_in_the_summary(glue: dict[str, str], summary: Any) -> None:
+    plant_output(Path(glue["OCS_OUT_DIR"]), summary=summary)
+    assert gate_result(glue) == "false"
+
+
+def test_gate_accepts_output_carrying_the_current_nonce(glue: dict[str, str]) -> None:
+    plant_output(Path(glue["OCS_OUT_DIR"]), summary=marked(NONCE))
+    assert gate_result(glue) == "true"
+
+
+def test_gate_refuses_when_there_is_no_nonce_or_no_output(glue: dict[str, str]) -> None:
+    plant_output(Path(glue["OCS_OUT_DIR"]), summary=marked(NONCE))
+    assert gate_result({**glue, "OCS_RUN_NONCE": ""}) == "false"
+    assert gate_result({**glue, "OCS_RUN_NONCE": "short"}) == "false"
+    assert gate_result({**glue, "OCS_OUT_DIR": ""}) == "false"
+    assert (
+        gate_result({**glue, "OCS_OUT_DIR": str(Path(glue["OCS_OUT_DIR"]) / "missing")}) == "false"
+    )
+
+
+def test_gate_refuses_links_and_foreign_content_in_marked_output(glue: dict[str, str]) -> None:
+    out = Path(glue["OCS_OUT_DIR"])
+    plant_output(out, summary=marked(NONCE))
+    (out / "evidence/link.json").symlink_to(out / "ci-summary.json")
+    assert gate_result(glue) == "false"
+    (out / "evidence/link.json").unlink()
+    assert gate_result(glue) == "true"
+    (out / "notes.txt").write_text("foreign\n")
+    assert gate_result(glue) == "false"
+    (out / "notes.txt").unlink()
+    (out / "ci-summary.json").rename(out / "real.json")
+    (out / "ci-summary.json").symlink_to(out / "real.json")
+    assert gate_result(glue) == "false"
+
+
+def test_cli_that_never_ran_leaves_a_planted_output_unpublished(glue: dict[str, str]) -> None:
+    plant_output(Path(glue["OCS_OUT_DIR"]))
+    run_step("run", {**glue, "OCS_ACTION_BIN": "/nonexistent/ocs"})
+    assert outputs(glue)["exit-code"] == "127"
+    assert gate_result(glue) == "false"
+
+
+def test_a_refusal_publishes_nothing_even_over_a_planted_marked_summary(
+    glue: dict[str, str], tmp_path: Path
+) -> None:
+    other = tmp_path / "act"
+    shutil.copytree(ACTION, other)
+    (other / "release-version.txt").write_text("9.9.9\n")
+    out = Path(glue["OCS_OUT_DIR"])
+    plant_output(out, summary=marked(NONCE))  # even a copy of this run's own nonce is cleared
+    env = {**glue, "GITHUB_ACTION_PATH": str(other)}
+    done = subprocess.run(
+        ["bash", "-c", step_script("run")],
+        env={"PATH": os.environ["PATH"], **env},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 0
+    assert outputs(glue)["exit-code"] == "2"
+    assert not (out / "evidence").exists()
+    assert not (out / "ci-summary.json").exists()
+    assert gate_result(glue) == "false"
+
+
+def test_real_run_then_gate_publishes_only_this_run(glue: dict[str, str], stack: None) -> None:
+    out = Path(glue["OCS_OUT_DIR"])
+    plant_output(out, summary=marked("cd34" * 8))
+    assert run_step("run", glue).returncode == 0
+    assert (out / "evidence/evidence-pack.json").read_text() != '{"planted": "fake success"}\n'
+    summary = json.loads((out / "ci-summary.json").read_text())
+    assert summary["extensions"]["x-run"]["nonce"] == NONCE
+    assert gate_result(glue) == "true"
+
+
+def test_confine_step_clears_owned_output_and_issues_a_fresh_nonce(
+    space: tuple[Path, Path], tmp_path: Path
+) -> None:
+    out = space[0] / "ocs-out"
+    plant_output(out, summary=marked("cd34" * 8))
+    (out / "reports").mkdir()
+    (out / "reports/stale.json").write_text("{}")
+    os.symlink(space[0] / "sample", out / "inputs")
+    code, err, output = run_main(space, tmp_path)
+    assert (code, err) == (0, "")
+    assert sorted(p.name for p in out.iterdir()) == []
+    assert (space[0] / "sample/workflow").is_dir()  # a link was removed, never followed
+    first = dict(line.split("=", 1) for line in output.read_text().splitlines())["run-nonce"]
+    _c, _e, again = run_main(space, tmp_path)
+    second = dict(line.split("=", 1) for line in again.read_text().splitlines())["run-nonce"]
+    assert len(first) == 32 and int(first, 16) >= 0
+    assert first != second
+
+
+def test_confine_step_still_refuses_foreign_files_and_does_not_clear(
+    space: tuple[Path, Path], tmp_path: Path
+) -> None:
+    out = space[0] / "ocs-out"
+    plant_output(out, summary=marked("cd34" * 8))
+    (out / "notes.txt").write_text("mine\n")
+    code, _err, output = run_main(space, tmp_path)
+    assert code == 2
+    assert not output.exists()
+    assert (out / "notes.txt").read_text() == "mine\n"
+
+
+def test_every_upload_is_gated_and_the_check_notices_a_missing_gate(repo_copy: Path) -> None:
+    action = yaml.safe_load((repo_copy / ".github/actions/ocs/action.yml").read_text())
+    uploads = [s for s in action["runs"]["steps"] if "upload-artifact" in str(s.get("uses"))]
+    assert [s["id"] for s in uploads] == ["upload-reports", "upload-full"]
+    assert all("steps.gate.outputs.publish == 'true'" in s["if"] for s in uploads)
+    mutate(
+        repo_copy,
+        ".github/actions/ocs/action.yml",
+        "always() && steps.gate.outputs.publish == 'true' && steps.confine.outputs.upload-full",
+        "always() && steps.confine.outputs.upload-full",
+    )
+    assert any("gated" in e for e in check_action.check_action(repo_copy))
+
+
+def test_the_check_notices_a_run_step_that_drops_the_nonce(repo_copy: Path) -> None:
+    mutate(
+        repo_copy,
+        ".github/actions/ocs/action.yml",
+        "        OCS_RUN_NONCE: ${{ steps.confine.outputs.run-nonce }}\n      run: |",
+        "      run: |",
+    )
+    assert any("nonce" in e for e in check_action.check_action(repo_copy))
