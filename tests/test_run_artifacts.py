@@ -13,8 +13,9 @@ from typing import Any
 
 import pytest
 
-from cognous_ocs import ci, fixtures_data, scaffold, validate
+from cognous_ocs import ci, doctor, fixtures_data, scaffold, validate
 from cognous_ocs.cli import Outcome, main
+from cognous_ocs.paths import PathRefused
 from test_ci import Fake, run
 
 STRICT = ["--out", "o", "--workflow", "wf", "--evidence-pack", "pack.json"]
@@ -222,7 +223,9 @@ def test_positive_immutable_run_with_the_real_stack(work: Path, stack: None) -> 
     code, env = run([*STRICT, "--copy-inputs"])
     assert (code, env["outcome"]) == (0, "pass"), env["messages"]
     marker = env["extensions"]["x-run"]
-    assert marker["nonce"] and len(marker["inputs"]) == 3
+    assert (
+        marker["nonce"] and len(marker["inputs"]) == 5
+    )  # 3 validated + workflow.json + policy.json
     assert sha(work / "o/evidence/evidence-pack.json") == sha(work / "pack.json")
     assert sorted(p["path"] for p in marker["published"]) == [
         "evidence/evidence-pack.json",
@@ -433,7 +436,11 @@ def test_foreign_files_still_refuse_and_are_not_touched(
     code, env = run(STRICT)
     assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"])
     assert (work / "o/notes.txt").read_text() == "mine\n"
-    assert (work / "o/ci-summary.json").read_text().startswith('{"outcome"')  # untouched, not run
+    # only the summary and diagnostics names go, so a stale pass summary cannot outlive the refusal;
+    # the rest of a directory that holds foreign files is never touched
+    assert not (work / "o/ci-summary.json").exists()
+    assert not (work / "o/ci-summary.md").exists()
+    assert (work / "o/evidence/evidence-pack.json").is_file()
 
 
 def test_an_input_inside_an_owned_name_is_refused_and_survives(
@@ -482,3 +489,150 @@ def test_non_assurance_still_follows_a_linked_input(
     code, env = run(["--out", "o", "--manifest", "m-link.json", "--non-assurance"])
     assert code == 0
     assert env["extensions"]["x-run"]["inputs"][0]["sha256"] == sha(work / "manifest.json")
+
+
+# strict no-link walk: absolute paths, differently spelled workspaces, temp roots
+
+
+def make_pack_dir(base: Path, name: str, src: Path) -> Path:
+    real = base / f"{name}-real"
+    real.mkdir()
+    (real / "pack.json").write_bytes(src.read_bytes())
+    return real
+
+
+def test_strict_refuses_an_absolute_path_outside_cwd_through_a_linked_parent(
+    work: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    Fake(monkeypatch, {})
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    real = make_pack_dir(outside, "d", work / "pack.json")
+    os.symlink(real, outside / "link")
+    code, env = run(["--out", "o", "--evidence-pack", str(outside / "link" / "pack.json")])
+    assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"])
+    # a linked middle component
+    (outside / "g").mkdir()
+    os.symlink(real, outside / "g" / "h")
+    code, env = run(["--out", "o", "--evidence-pack", str(outside / "g" / "h" / "pack.json")])
+    assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"])
+    assert not (work / "o/evidence").exists()
+    # the same file reached without a link is accepted
+    code, _ = run(["--out", "o", "--evidence-pack", str(real / "pack.json")])
+    assert code == 0
+
+
+def test_strict_refuses_a_linked_directory_when_the_workspace_is_spelled_differently(
+    work: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """GITHUB_WORKSPACE names the workspace through a link; getcwd() is the physical path."""
+    Fake(monkeypatch, {})
+    spelled = tmp_path / "spelled"
+    os.symlink(work, spelled)
+    make_pack_dir(work, "ev", work / "pack.json")
+    os.symlink(work / "ev-real", work / "evlink")  # repository content: a linked directory
+    monkeypatch.setenv("GITHUB_WORKSPACE", str(spelled))
+    code, env = run(["--out", "o", "--evidence-pack", str(spelled / "evlink" / "pack.json")])
+    assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"])
+    # the workspace link itself is the runner's: a plain file below it is accepted
+    code, _ = run(["--out", "o", "--evidence-pack", str(spelled / "pack.json")])
+    assert code == 0
+    # with no root naming the link at all the walk starts at / and refuses it (fail closed)
+    monkeypatch.delenv("GITHUB_WORKSPACE")
+    monkeypatch.delenv("PWD", raising=False)
+    code, env = run(["--out", "o", "--evidence-pack", str(spelled / "pack.json")])
+    assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"])
+
+
+def test_strict_accepts_a_path_under_a_linked_temp_root(
+    work: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import tempfile
+
+    Fake(monkeypatch, {})
+    real = tmp_path / "realtmp"
+    real.mkdir()
+    (real / "pack.json").write_bytes((work / "pack.json").read_bytes())
+    os.symlink(real, tmp_path / "linktmp")
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path / "linktmp"))
+    code, _ = run(["--out", "o", "--evidence-pack", str(tmp_path / "linktmp" / "pack.json")])
+    assert code == 0
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path / "linktmp"))
+    code, _ = run(["--out", "o", "--evidence-pack", str(tmp_path / "linktmp" / "pack.json")])
+    assert code == 0
+
+
+def test_strict_walk_still_refuses_dotdot_through_a_link_and_the_final_link(
+    work: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    Fake(monkeypatch, {})
+    make_pack_dir(work, "ev", work / "pack.json")
+    os.symlink(work / "ev-real", work / "evlink")
+    os.symlink(work / "pack.json", work / "final.json")
+    for path in ("evlink/../evlink/pack.json", "evlink/pack.json", "final.json"):
+        code, env = run(["--out", "o", "--evidence-pack", path])
+        assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"]), path
+        code, env = run(["--out", "o", "--evidence-pack", str(work / path)])
+        assert (code, env["reason_codes"]) == (2, ["OCS_PATHS"]), path
+
+
+def test_an_input_swapped_for_a_fifo_does_not_hang_the_run(work: Path) -> None:
+    os.mkfifo(work / "fifo.json")
+    for no_links in (True, False):
+        fd = ci._open_input(Path("fifo.json"), no_links=no_links)  # returns at once
+        os.close(fd)
+    arts = ci.RunArtifacts(work / "o")
+    try:
+        with pytest.raises(PathRefused):
+            arts.snapshot(work / "fifo.json", "x.json", no_links=True)
+    finally:
+        arts.close()
+
+
+# the doctor reads the run's copy of the workflow files
+
+
+def test_doctor_reads_a_private_copy_not_the_live_workflow_files(
+    work: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_checks = doctor.run_checks
+    seen: dict[str, Any] = {}
+    fake = Fake(monkeypatch, {})
+
+    def corrupt_then_check(workflow: str | None, **kw: Any) -> Any:
+        seen["dir"] = workflow
+        (work / "wf/policy.json").write_text("{}")  # live files change after the snapshot
+        (work / "wf/manifest.json").write_text("{}")
+        (work / "wf/workflow.json").write_text("{}")
+        checks = real_checks(workflow, **kw)
+        seen["checks"] = {c.code: c.status for c in checks}
+        return checks
+
+    monkeypatch.setattr(ci, "run_checks", corrupt_then_check)
+    code, env = run(["--out", "o", "--workflow", "wf", "--non-assurance"])
+    assert seen["dir"] != "wf" and not Path(seen["dir"]).exists()  # private, gone after the run
+    assert seen["checks"]["OCS_MANIFEST"] == "PASS"
+    assert seen["checks"]["OCS_POLICY_BIND"] == "PASS"
+    assert seen["checks"]["OCS_PATHS"] == "PASS"
+    assert "ocs-run-" not in json.dumps(env)
+    kinds = {i["kind"] for i in env["extensions"]["x-run"]["inputs"]}
+    assert "workflow-setup" in kinds
+    del fake, code
+
+
+def test_doctor_copy_still_fails_a_workflow_that_is_wrong_at_the_start(
+    work: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_checks = doctor.run_checks
+    Fake(monkeypatch, {})
+    (work / "wf/policy.json").write_text("{}")
+    got: dict[str, str] = {}
+
+    def check(workflow: str | None, **kw: Any) -> Any:
+        checks = real_checks(workflow, **kw)
+        got.update({c.code: c.status for c in checks})
+        return checks
+
+    monkeypatch.setattr(ci, "run_checks", check)
+    run(["--out", "o", "--workflow", "wf", "--non-assurance"])
+    assert got["OCS_POLICY_BIND"] == "FAIL"

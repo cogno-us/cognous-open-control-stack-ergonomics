@@ -96,6 +96,7 @@ class Step:
     messages: list[str] = field(default_factory=list)
     report: dict[str, Any] | None = None
     snapshot: Snapshot | None = None
+    doctor_dir: Path | None = None  # the private copy of the workflow directory the doctor reads
 
     def record(self, shown: str | None) -> dict[str, Any]:
         return {
@@ -184,30 +185,55 @@ class Snapshot:
             raise SnapshotChanged("the run snapshot changed after its digest was taken")
 
 
-def _open_input(source: Path, *, no_links: bool) -> int:
-    """Open an input once. With no_links no component of the given path may be a symbolic link.
+def _trusted_roots() -> list[Path]:
+    """Directories whose own path may contain links: the runner provides them, not the repository.
 
-    Components are opened one by one with O_NOFOLLOW from the working directory, so a parent that
-    is swapped for a link after a check is refused at the open itself. An absolute path outside the
-    working directory is anchored at its real parent directory (system directories such as a
-    linked temp root are not the user's inputs) and only its final component is checked."""
+    The working directory (as the kernel and as the shell name it), GITHUB_WORKSPACE, the runner
+    temp directory and the system temp directory. A link INSIDE one of them is input-controlled
+    and is refused; a link in the prefix that leads to the root itself is not."""
+    found: list[str] = [os.getcwd(), os.environ.get("PWD", "")]
+    found += [os.environ.get("GITHUB_WORKSPACE", ""), os.environ.get("RUNNER_TEMP", "")]
+    found.append(tempfile.gettempdir())
+    roots: list[Path] = []
+    for raw in found:
+        if raw and os.path.isabs(raw):
+            roots.append(Path(os.path.normpath(raw)))
+            roots.append(Path(os.path.realpath(raw)))
+    return roots
+
+
+def _open_input(source: Path, *, no_links: bool) -> int:
+    """Open an input once. With no_links no component of the given path below a trusted root may
+    be a symbolic link.
+
+    Every component is opened one by one with O_NOFOLLOW, so a parent swapped for a link after a
+    check is refused at the open itself. A relative path is walked from the working directory. An
+    absolute path is walked from the longest trusted root (see `_trusted_roots`) that contains it
+    lexically, or from / when none does, so a link in an absolute path outside the workspace and
+    temp directories is refused too. O_NONBLOCK keeps a path swapped for a FIFO from hanging the
+    run (the caller then refuses a non-regular file)."""
+    leaf = os.O_RDONLY | os.O_NONBLOCK
     if not no_links:
-        return os.open(source, os.O_RDONLY)
-    cwd = os.getcwd()
+        return os.open(source, leaf)
     if not source.is_absolute():
         anchor, parts = ".", source.parts
     else:
-        try:
-            anchor, parts = cwd, source.relative_to(cwd).parts
-        except ValueError:
-            anchor, parts = os.path.realpath(source.parent), (source.name,)
+        anchor, parts = "/", source.parts[1:]
+        best = -1
+        for root in _trusted_roots():
+            try:
+                rel = source.relative_to(root).parts
+            except ValueError:
+                continue
+            if len(root.parts) > best and rel:
+                anchor, parts, best = str(root), rel, len(root.parts)
     dir_fd = os.open(anchor, os.O_RDONLY | os.O_DIRECTORY)
     try:
         for part in parts[:-1]:
             nxt = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=dir_fd)
             os.close(dir_fd)
             dir_fd = nxt
-        return os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW, dir_fd=dir_fd)
+        return os.open(parts[-1], leaf | os.O_NOFOLLOW, dir_fd=dir_fd)
     finally:
         os.close(dir_fd)
 
@@ -276,6 +302,60 @@ class RunArtifacts:
             os.close(fd)
         digest, size = _sha256_of(target)  # the digest of the snapshot, not of the original path
         return Snapshot(target, digest, size)
+
+    def snapshot_workflow(self, base: Path, steps: list[Step], *, no_links: bool) -> Path:
+        """A private copy of the workflow files the doctor reads (workflow.json, policy.json and the
+        named manifest and run record), so the setup checks see the bytes this run recorded. The
+        manifest and run record are the very snapshots that were validated."""
+        if self._snapdir is None:
+            self._snapdir = Path(tempfile.mkdtemp(prefix="ocs-run-"))
+        root = self._snapdir / "workflow"
+        root.mkdir()
+
+        def place(rel: str, snap: Snapshot) -> None:
+            target = root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(snap.path, target)
+
+        def take(live: Path, name: str, label: str) -> Snapshot:
+            snap = self.snapshot(live, name, no_links=no_links)
+            self.inputs.append(
+                {
+                    "check": label,
+                    "kind": "workflow-setup",
+                    "sha256": snap.sha256,
+                    "bytes": snap.size,
+                }
+            )
+            return snap
+
+        live = base / WORKFLOW_FILE
+        if not _plain_file(live):
+            return root  # the doctor reports it missing
+        first = take(live, "wf-workflow.json", WORKFLOW_FILE)
+        place(WORKFLOW_FILE, first)
+        try:
+            settings = validate.load_document(first.path)
+        except (OSError, ValueError):
+            return root
+        labels = {
+            "manifest": "validate workflow manifest",
+            "run_record": "validate workflow run record",
+        }
+        for key in ("manifest", "policy", "run_record"):
+            resolved, problem = _confined(base, settings.get(key))
+            if resolved is None or problem or not _plain_file(resolved):
+                continue
+            step = next(
+                (x for x in steps if x.label == labels.get(key) and x.path == resolved), None
+            )
+            snap = (
+                step.snapshot
+                if step is not None and step.snapshot is not None
+                else take(resolved, f"wf-{key}.json", f"workflow {key}")
+            )
+            place(str(settings[key]), snap)
+        return root
 
     # outputs
 
@@ -442,12 +522,16 @@ def _collect(
 
 def _run_step(step: Step, workflow: str | None) -> None:
     if step.kind is None:
-        checks = run_checks(workflow)
+        copy = step.doctor_dir
+        checks = run_checks(str(copy) if copy is not None else workflow)
         failed = [c for c in checks if c.status == FAILED]
         step.outcome = INVALID if failed else PASS
         step.exit_code = 2 if failed else 0
         step.reason_codes = [c.code for c in failed]
         step.messages = [f"{c.status} {c.code}: {c.message}" for c in checks]
+        if copy is not None and workflow is not None:
+            for seen in (str(copy.resolve()), str(copy)):
+                step.messages = [_relabel(m, seen, workflow) for m in step.messages]
         return
     if step.kind == MISSING_KIND:
         step.outcome = INVALID
@@ -555,6 +639,12 @@ def run_ci(
             Result("ci", INVALID, [OCS_PATHS], subject, messages=["the output path cannot be read"])
         )
     if foreign:
+        # Only the summary and diagnostics names go: a stale pass summary must not outlive the
+        # refusal. The rest of the directory may be the caller's and is never touched.
+        for name in (SUMMARY_JSON, SUMMARY_MD, DIAGNOSTICS):
+            with contextlib.suppress(OSError):
+                if (out / name).is_file() or (out / name).is_symlink():
+                    (out / name).unlink()
         return Outcome(
             Result(
                 "ci",
@@ -675,6 +765,10 @@ def _run(
                         "bytes": s.snapshot.size,
                     }
                 )
+        if workflow is not None:
+            doctor = next((s for s in steps if s.kind is None), None)
+            if doctor is not None:
+                doctor.doctor_dir = run.snapshot_workflow(Path(workflow), steps, no_links=no_links)
     except PathRefused as exc:
         return Outcome(Result("ci", INVALID, [OCS_PATHS], subject, messages=[str(exc)]), out)
 
