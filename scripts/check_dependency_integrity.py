@@ -130,24 +130,142 @@ class Command:
     words: list[str]
 
 
-def _norm_lines(text: str) -> list[str]:
-    """Logical shell lines: heredoc bodies dropped, backslash continuations joined."""
-    lines = text.replace("\r\n", "\n").split("\n")
+DATA_CONSUMERS = {
+    "cat",
+    "tee",
+    "echo",
+    "printf",
+    "grep",
+    "wc",
+    "sort",
+    "diff",
+    "tr",
+    "base64",
+    "head",
+    "tail",
+    "cut",
+    "sed",
+    "awk",
+}
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
+KEYWORDS = {
+    "if",
+    "then",
+    "else",
+    "elif",
+    "fi",
+    "do",
+    "done",
+    "while",
+    "until",
+    "{",
+    "}",
+    "!",
+    "time",
+    "exec",
+    "command",
+    "builtin",
+    "nohup",
+    "coproc",
+    "function",
+    "case",
+    "esac",
+    "for",
+    "in",
+}
+WRAPPER_CMDS = {"sudo", "env", "nice", "timeout", "ionice", "stdbuf", "setsid", "doas", "chroot"}
+EXTRA_UNLOCKED = {
+    "uvx": "uvx runs tools resolved from the live index",
+    "hatch": "hatch resolves environments outside the locks",
+    "tox": "tox resolves environments outside the locks",
+    "nox": "nox resolves environments outside the locks",
+}
+PIP_SUBS = {
+    "install",
+    "download",
+    "wheel",
+    "config",
+    "lock",
+    "index",
+    "cache",
+    "hash",
+    "inspect",
+    "debug",
+}
+EMBEDDED_INSTALLER = re.compile(
+    r"\b(?:pip3?|uvx?|pipx)\s+(?:install|download|wheel|pip|sync|add|run|tool)\b|-m\s+pip\b|\bpip\.main\b|pip\._internal|\bensurepip\b"
+)
+CMD_SUBST = re.compile(r"\$\(([^()]*)\)|`([^`]*)`")
+LOCAL_VAR = re.compile(
+    r"\$\{?(?:root|GITHUB_WORKSPACE|GITHUB_ACTION_PATH|RUNNER_TEMP)\}?(?:/[A-Za-z0-9_./-]*)?"
+)
+
+
+def _split_heredocs(text: str, py_sink: list[str] | None = None) -> str:
+    """Shell text with heredocs resolved.
+
+    A body consumed by a data command (`cat <<EOF`) is dropped. A body consumed by a shell,
+    `eval`, `source` or an unknown command is kept as shell lines; one consumed by a Python
+    interpreter is handed to `py_sink` (or analysed as shell text if there is no sink).
+    """
     out: list[str] = []
-    skip_to: str | None = None
-    for line in lines:
-        if skip_to is not None:
-            if line.strip() == skip_to:
-                skip_to = None
+    lines = text.replace("\r\n", "\n").split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        i += 1
+        m = HEREDOC.search(line)
+        if not m:
+            out.append(line)
             continue
-        m = re.search(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1", line)
-        if m:
-            skip_to = m[2]
-            line = line[: m.start()]
-        out.append(line)
+        prefix = line[: m.start()]
+        body: list[str] = []
+        while i < len(lines) and lines[i].strip() != m[2]:
+            body.append(lines[i])
+            i += 1
+        i += 1  # the delimiter
+        out.append(prefix + line[m.end() :])
+        try:
+            words = _strip_leading(
+                shlex.split(prefix.split("|")[-1].split("&&")[-1].split(";")[-1])
+            )
+        except ValueError:
+            words = []
+        consumer = _base(words[0]) if words else ""
+        if consumer in DATA_CONSUMERS:
+            continue
+        if _is_python(consumer) and py_sink is not None:
+            py_sink.append("\n".join(body))
+        else:
+            out.extend(body)
+    return "\n".join(out)
+
+
+def _strip_leading(words: list[str]) -> list[str]:
+    """Drop shell keywords, VAR=value prefixes and wrapper commands with their options."""
+    i = 0
+    while i < len(words):
+        w = words[i]
+        if w in KEYWORDS or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", w):
+            i += 1
+        elif _base(w) in WRAPPER_CMDS:
+            i += 1
+            while i < len(words) and (
+                words[i].startswith("-")
+                or re.fullmatch(r"\d+(?:\.\d+)?[smhd]?", words[i])
+                or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", words[i])
+            ):
+                i += 1
+        else:
+            break
+    return words[i:]
+
+
+def _norm_lines(text: str) -> list[str]:
+    """Logical shell lines: backslash continuations joined."""
     joined: list[str] = []
     buf = ""
-    for line in out:
+    for line in text.split("\n"):
         if line.rstrip().endswith("\\"):
             buf += line.rstrip()[:-1] + " "
         else:
@@ -158,11 +276,14 @@ def _norm_lines(text: str) -> list[str]:
     return joined
 
 
-def _shell_statements(text: str) -> Iterator[tuple[int, list[str]]]:
+def _shell_statements(
+    text: str, py_sink: list[str] | None = None
+) -> Iterator[tuple[int, list[str]]]:
     """(line number, words) for every simple command; redirections are dropped."""
     pending = ""
     start = 0
-    for number, raw in enumerate(_norm_lines(text), 1):
+    for number, raw in enumerate(_norm_lines(_split_heredocs(text, py_sink)), 1):
+        raw = re.sub(r"`([^`]*)`", r" ; \1 ; ", raw)  # command substitution
         line = pending + ("\n" if pending else "") + raw
         if not pending:
             start = number
@@ -199,6 +320,15 @@ def _shell_statements(text: str) -> Iterator[tuple[int, list[str]]]:
         yield start, ["<unparseable>", pending.strip()[:60]]
 
 
+def analyze_script(where: str, text: str, ctx: Context) -> None:
+    """Analyse a shell script body (a workflow `run:`, a recipe, a .sh file)."""
+    bodies: list[str] = []
+    for line_no, words in _shell_statements(text, bodies):
+        analyze_words(f"{where}, line {line_no}", words, ctx)
+    for body in bodies:
+        analyze_python_source(where, body, ctx)
+
+
 def _base(word: str) -> str:
     return word.rsplit("/", 1)[-1]
 
@@ -211,13 +341,14 @@ def _is_python(word: str) -> bool:
     return re.fullmatch(r"python(?:3(?:\.\d+)?)?(?:\.exe)?", _base(word)) is not None
 
 
-def _strip_prefix(words: list[str]) -> list[str]:
-    i = 0
-    while i < len(words) and (
-        words[i] in WRAPPERS or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", words[i])
-    ):
-        i += 1
-    return words[i:]
+def _embedded(where: str, code: str, ctx: Context) -> None:
+    """A string handed to a shell or interpreter must not run an installer we cannot check."""
+    if EMBEDDED_INSTALLER.search(code):
+        # A shell string is analysed as shell; anything else that mentions an installer is refused.
+        for _, inner in _shell_statements(code):
+            analyze_words(where, inner, ctx)
+        if re.search(r"pip\.main|pip\._internal|ensurepip|import pip", code):
+            ctx.error(f"{where}: Python code calls pip internals; not allowed")
 
 
 def analyze_words(where: str, words: list[str], ctx: Context) -> None:
@@ -226,40 +357,78 @@ def analyze_words(where: str, words: list[str], ctx: Context) -> None:
         m = ENV_SETTING.match(word)
         if m and m[1] not in SAFE_ENV:
             ctx.error(f"{where}: {m[1]} changes package resolution; not allowed")
-    words = _strip_prefix(words)
-    if not words:
-        return
-    head = _base(words[0])
-    if words[0] == "<unparseable>":
+        assigned = re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=(.+)", word, re.S)
+        if assigned and EMBEDDED_INSTALLER.search(assigned[1]):
+            _embedded(where, assigned[1], ctx)
+        for subst in CMD_SUBST.finditer(word):
+            for _, inner in _shell_statements(subst[1] or subst[2]):
+                analyze_words(where, inner, ctx)
+    if words and words[0] == "<unparseable>":
         if re.search(r"\b(pip|uv)\b", words[1]):
             ctx.error(f"{where}: cannot parse a command that mentions pip/uv ({words[1]!r})")
         return
+    words = _strip_leading(words)
+    if not words:
+        return
+    head = _base(words[0])
     if head in SHELLS and "-c" in words:
         idx = words.index("-c")
         if idx + 1 < len(words):
             for _, inner in _shell_statements(words[idx + 1]):
                 analyze_words(where, inner, ctx)
         return
-    if head in UNLOCKED_TOOLS:
-        ctx.error(f"{where}: `{head}`: {UNLOCKED_TOOLS[head]}")
+    if head in {"eval", "source", "."}:
+        for _, inner in _shell_statements(" ".join(words[1:])):
+            analyze_words(where, inner, ctx)
         return
-    if head in {"xargs", "find"} and any(_is_pip(w) or _base(w) == "uv" for w in words[1:]):
+    if head in DATA_CONSUMERS:
+        return  # prints or filters text; command substitutions inside were analysed above
+    if head in UNLOCKED_TOOLS or head in EXTRA_UNLOCKED:
+        ctx.error(f"{where}: `{head}`: {(UNLOCKED_TOOLS | EXTRA_UNLOCKED)[head]}")
+        return
+    if head in {"xargs", "find"} and any(
+        _is_pip(w) or _base(w) in {"uv", "uvx"} for w in words[1:]
+    ):
         ctx.error(f"{where}: an installer run through `{head}` cannot be checked")
         return
-    if _is_pip(words[0]):
-        analyze_pip(where, words[1:], ctx)
-    elif _is_python(words[0]) and words[1:2] == ["-m"] and len(words) > 2:
-        module = words[2]
-        if module == "pip":
-            analyze_pip(where, words[3:], ctx)
-        elif module == "build":
-            if not {"--no-isolation", "-n"} & set(words[3:]):
-                ctx.error(
-                    f"{where}: `python -m build` must run with --no-isolation (locked toolchain)"
-                )
-        elif module in {"pipx", "uv", "easy_install", "ensurepip"}:
-            ctx.error(f"{where}: `python -m {module}` is not an allowed installer")
-    elif head == "uv":
+    if head.startswith("$") and any(w in {"pip", "install", "-m"} or _is_pip(w) for w in words[1:]):
+        ctx.error(
+            f"{where}: the command word {words[0]!r} is a variable; an installer behind it cannot be checked"
+        )
+    # Interpreter options (-u, -I, -W x, -X y) may precede -m / -c.
+    if _is_python(words[0]) or head.startswith("$"):
+        j = 1
+        while j < len(words):
+            w = words[j]
+            if w == "-m" and j + 1 < len(words):
+                break
+            if w == "-c" and j + 1 < len(words):
+                _embedded(where, words[j + 1], ctx)
+                analyze_python_source(where, words[j + 1], ctx)
+                break
+            j += 2 if w in {"-W", "-X", "-Q"} else 1
+            if not w.startswith("-"):
+                break
+    # `-m pip` / `-m build` / `-m uv` anywhere, and `pip <subcommand>` anywhere in the statement.
+    for k, w in enumerate(words):
+        if w == "-m" and k + 1 < len(words):
+            module = words[k + 1]
+            if module == "pip":
+                analyze_pip(where, words[k + 2 :], ctx)
+            elif module == "build":
+                if not {"--no-isolation", "-n"} & set(words[k + 2 :]):
+                    ctx.error(
+                        f"{where}: `python -m build` must run with --no-isolation (locked toolchain)"
+                    )
+            elif module in {"pipx", "uv", "easy_install", "ensurepip", "hatch", "tox"}:
+                ctx.error(f"{where}: `python -m {module}` is not an allowed installer")
+            return
+        if _is_pip(w):
+            nxt = next((a for a in words[k + 1 :] if not a.startswith("-")), None)
+            if nxt in PIP_SUBS or k == 0:
+                analyze_pip(where, words[k + 1 :], ctx)
+                return
+    if head == "uv":
         sub = words[1:2]
         if sub == ["pip"] and words[2:3] == ["install"]:
             analyze_pip(where, words[2:], ctx, tool="uv pip")
@@ -365,12 +534,16 @@ def analyze_local_install(
         return
     target = positionals[0]
     offline = "--no-index" in flags
-    local = (
-        target in {".", ".."}
-        or target.startswith(("/", "./", "../", "$", "~"))
-        or "/" in target
-        or target.endswith(".whl")
-    )
+    if "$" in target or "`" in target or "{{" in target:
+        # Only the checkout / runner paths are known to be local; any other variable could be a package name.
+        local = target == "$dyn" or LOCAL_VAR.fullmatch(target) is not None
+    else:
+        local = (
+            target in {".", ".."}
+            or target.startswith(("/", "./", "../", "~"))
+            or "/" in target
+            or target.endswith(".whl")
+        )
     if not local or "://" in target or "git+" in target or "[" in target or "==" in target:
         ctx.error(
             f"{where}: install target {target!r} must be a local path or wheel without extras; "
@@ -445,6 +618,10 @@ def _yaml_steps(doc: Any) -> Iterator[tuple[str, dict[str, Any]]]:
 
 def check_github_files(root: Path, ctx: Context) -> None:
     files = sorted((root / ".github").rglob("*.yml")) + sorted((root / ".github").rglob("*.yaml"))
+    seen = {p.resolve() for p in files}
+    for extra in _repo.tracked_files(root):  # local composite actions outside .github/
+        if extra.name in {"action.yml", "action.yaml"} and extra.resolve() not in seen:
+            files.append(extra)
     for path in files:
         if not path.is_file():
             continue
@@ -473,12 +650,9 @@ def check_github_files(root: Path, ctx: Context) -> None:
                 current = unit
             run = step.get("run")
             if isinstance(run, str):
-                for line_no, words in _shell_statements(run):
-                    analyze_words(
-                        f"{rel} ({unit}, step {step.get('name') or step.get('id') or '?'}, line {line_no})",
-                        words,
-                        ctx,
-                    )
+                analyze_script(
+                    f"{rel} ({unit}, step {step.get('name') or step.get('id') or '?'})", run, ctx
+                )
                 for match in ENV_SETTING.finditer(run):
                     if match[1] not in SAFE_ENV:
                         ctx.error(
@@ -503,10 +677,18 @@ def check_makefile(root: Path, ctx: Context) -> None:
         return
     ctx.begin_unit("Makefile")
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for match in ENV_SETTING.finditer(line):
+            if match[1] not in SAFE_ENV:
+                ctx.error(f"Makefile:{number}: `{match[1]}` changes package resolution")
+        if not line.startswith("\t") and re.match(
+            r"\s*(?:export\s+)?\w+\s*[:?+]?=.*\b(?:pip3?|uvx?|pipx)\b", line
+        ):
+            ctx.error(
+                f"Makefile:{number}: a make variable that names an installer hides the command"
+            )
         if line.startswith("\t"):
             text = re.sub(r"\$\((?:PY|PYTHON)\)", "python", line.lstrip("\t@-"))
-            for _, words in _shell_statements(text):
-                analyze_words(f"Makefile:{number}", words, ctx)
+            analyze_script(f"Makefile:{number}", text, ctx)
     # make recipes run in the caller's environment; build is checked, installs are refused
     # unless in an allowed form.
 
@@ -530,8 +712,48 @@ def _argv_literal(node: ast.AST) -> list[str] | None:
     return words
 
 
+def analyze_python_tree(rel: str, tree: ast.AST, ctx: Context, strings: bool = True) -> None:
+    """argv lists and command strings in Python code that run pip or uv."""
+    docstrings = {
+        id(n.body[0].value)
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Module | ast.FunctionDef | ast.ClassDef)
+        and n.body
+        and isinstance(n.body[0], ast.Expr)
+        and isinstance(n.body[0].value, ast.Constant)
+    }
+    for node in ast.walk(tree):
+        where = f"{rel}:{getattr(node, 'lineno', '?')}"
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if strings and id(node) not in docstrings and EMBEDDED_INSTALLER.search(node.value):
+                _embedded(where, node.value, ctx)
+            continue
+        words = _argv_literal(node)
+        if not words:
+            continue
+        for i in range(len(words) - 1):
+            if _is_pip(words[i]) and words[i + 1] in PIP_SUBS:
+                analyze_words(where, words[i:], ctx)
+                break
+        else:
+            if _base(words[0]) in {"uv", "uvx", "pipx"} or (
+                _is_python(words[0]) and words[1:3] == ["-m", "uv"]
+            ):
+                analyze_words(where, words, ctx)
+
+
+def analyze_python_source(rel: str, source: str, ctx: Context) -> None:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        if EMBEDDED_INSTALLER.search(source):
+            ctx.error(f"{rel}: an unparseable interpreter script mentions an installer")
+        return
+    analyze_python_tree(rel, tree, ctx)
+
+
 def check_python_argv(root: Path, ctx: Context) -> None:
-    """argv lists in scripts/, tools/ and tests/ that run pip."""
+    """Python files in scripts/, tools/ and tests/."""
     for base in ("scripts", "tools", "tests"):
         for path in sorted((root / base).rglob("*.py")):
             if path.name in {"check_dependency_integrity.py", "test_dependency_integrity.py"}:
@@ -542,18 +764,27 @@ def check_python_argv(root: Path, ctx: Context) -> None:
             except SyntaxError:
                 continue
             ctx.begin_unit(rel)
-            for node in ast.walk(tree):
-                words = _argv_literal(node)
-                if not words:
-                    continue
-                where = f"{rel}:{getattr(node, 'lineno', '?')}"
-                for i in range(len(words) - 1):
-                    if _is_pip(words[i]) and words[i + 1] in {"install", "download", "wheel"}:
-                        analyze_words(where, words[i:], ctx)
-                        break
-                else:
-                    if _base(words[0]) == "uv":
-                        analyze_words(where, words, ctx)
+            # Test files quote install commands in messages and assertions; only their argv lists run.
+            analyze_python_tree(rel, tree, ctx, strings=base != "tests")
+
+
+def check_other_scripts(root: Path, ctx: Context) -> None:
+    """Shell scripts and Dockerfiles anywhere in the repository."""
+    for path in _repo.tracked_files(root):
+        rel = path.relative_to(root).as_posix()
+        if path.suffix == ".sh":
+            ctx.begin_unit(rel)
+            analyze_script(rel, path.read_text(encoding="utf-8"), ctx)
+        elif path.name.startswith(("Dockerfile", "Containerfile")):
+            ctx.begin_unit(rel)
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                words = line.split()
+                if words[:1] == ["FROM"]:
+                    image = next((w for w in words[1:] if not w.startswith("--")), "")
+                    if image != "scratch" and not DIGEST.search(image):
+                        ctx.error(f"{rel}:{number}: FROM {image} has no @sha256 digest")
+                elif words[:1] == ["RUN"]:
+                    analyze_script(f"{rel}:{number}", line[3:].strip(), ctx)
 
 
 # ---------------------------------------------------------------- locks and metadata
@@ -632,6 +863,9 @@ def check_locks(root: Path, ctx: Context) -> None:
         ctx.error("requirements/build.txt (the locked build toolchain) is missing")
         return
     backend_reqs = list(build_system.get("requires", []))
+    for requirement in backend_reqs:
+        if "@" in requirement or "://" in requirement:
+            ctx.error(f"pyproject.toml: build requirement {requirement!r} is a direct reference")
     for e in _lockfile.check_ranges("requirements/build.txt", build, backend_reqs):
         ctx.error(e)
     for name in ("hatchling", "editables", "setuptools", "wheel"):
@@ -712,6 +946,13 @@ def check_repo_wide(root: Path, ctx: Context) -> None:
     for key in ("uv", "pip", "poetry", "pdm"):
         if key in pyproject.get("tool", {}):
             ctx.error(f"pyproject.toml: [tool.{key}] can redirect package resolution; not allowed")
+    if "envs" in pyproject.get("tool", {}).get("hatch", {}):
+        ctx.error("pyproject.toml: [tool.hatch.envs] resolves environments outside the locks")
+    if pyproject["project"].get("dependencies"):
+        ctx.error(
+            "pyproject.toml: [project] dependencies must stay empty (extras are locked; "
+            "a runtime dependency would not be covered by any lock)"
+        )
 
 
 def check(root: Path) -> list[str]:
@@ -721,6 +962,7 @@ def check(root: Path) -> list[str]:
     check_github_files(root, ctx)
     check_makefile(root, ctx)
     check_python_argv(root, ctx)
+    check_other_scripts(root, ctx)
     check_repo_wide(root, ctx)
     return sorted(set(errors))
 

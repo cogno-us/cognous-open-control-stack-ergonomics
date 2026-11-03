@@ -714,3 +714,148 @@ def test_specifier_arithmetic(version: str, spec: str, ok: bool) -> None:
 def test_unsupported_specifier_is_not_silently_accepted() -> None:
     lockfile = load_script("_lockfile")
     assert lockfile.satisfies("1.0", "~=1.0") is None
+
+
+# ---- bypass attempts found in independent review (shell syntax variants) -----------------------
+
+
+def inject_script(root: Path, script: str) -> None:
+    body = "".join(f"          {line}\n" for line in script.split("\n"))
+    edit(
+        root,
+        CI,
+        "      - name: make check (lint",
+        f"      - name: injected\n        run: |\n{body}      - name: make check (lint",
+    )
+
+
+BYPASS_SCRIPTS = [
+    ("uvx ruff check .", "uvx"),
+    ("uv tool run ruff", "uv tool"),
+    ("pip install --no-deps --no-build-isolation $PKG", "local path"),
+    ('pip install --no-deps --no-build-isolation "$PKG"', "local path"),
+    ("pip install --no-deps --no-build-isolation ${{ inputs.pkg }}", "local path"),
+    ('pip install --no-deps --no-build-isolation "$OCS_IN_PKG"', "local path"),
+    ("bash <<EOF\npip install requests\nEOF", "local path"),
+    ("sh -s <<'EOF'\npip install requests\nEOF", "local path"),
+    (
+        "python - <<EOF\nimport subprocess\nsubprocess.run(['pip', 'install', 'requests'])\nEOF",
+        "local path",
+    ),
+    ('eval "pip install requests"', "local path"),
+    ("x=`pip install requests`", "local path"),
+    ('x="$(pip install requests)"', "local path"),
+    (
+        "python -c \"import subprocess; subprocess.run(['pip','install','requests'])\"",
+        "local path",
+    ),
+    ("python -c \"import pip; pip.main(['install', 'requests'])\"", "pip internals"),
+    ("python -c \"import os; os.system('pip install requests')\"", "local path"),
+    ("python3 -u -m pip install requests", "local path"),
+    ("python -W ignore -m pip install requests", "local path"),
+    ("python3 -I -m pip install requests", "local path"),
+    ("$PY -m pip install requests", "local path"),
+    ('"$PYTHON" -m pip install requests', "local path"),
+    ("timeout 60 pip install requests", "local path"),
+    ("nice -n 5 pip install requests", "local path"),
+    ("sudo -E pip install requests", "local path"),
+    ("env -i pip install requests", "local path"),
+    ("if true; then pip install requests; fi", "local path"),
+    ("if true; then true; else pip install requests; fi", "local path"),
+    ('while read p; do pip install "$p"; done < f', "local path"),
+    ("f() { pip install requests; }; f", "local path"),
+    ("{ pip install requests; }", "local path"),
+    ('INSTALL="pip install requests"\n$INSTALL', "local path"),
+    ("hatch build", "hatch"),
+    ("tox", "tox"),
+]
+
+
+@pytest.mark.parametrize(("script", "needle"), BYPASS_SCRIPTS)
+def test_shell_syntax_variants_cannot_hide_an_unlocked_install(
+    repo_copy: Path, script: str, needle: str
+) -> None:
+    inject_script(repo_copy, script)
+    expect(repo_copy, needle)
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "cat <<EOF\npip install requests\nEOF",
+        "echo pip install requests",
+        "timeout 60 make check",
+        "python3 -u -c 'print(1)'",
+        "if true; then echo ok; fi",
+    ],
+)
+def test_data_heredocs_and_harmless_commands_stay_allowed(repo_copy: Path, script: str) -> None:
+    inject_script(repo_copy, script)
+    assert errors_of(repo_copy) == []
+
+
+def test_only_the_checkout_variables_are_known_local_targets(repo_copy: Path) -> None:
+    preamble = (
+        "pip install --require-hashes --no-deps --no-build-isolation -r requirements/build.txt\n"
+    )
+    for target in ('"$root"', "$RUNNER_TEMP/other-ocs", "${GITHUB_WORKSPACE}", "."):
+        inject_script(repo_copy, preamble + f"pip install --no-deps --no-build-isolation {target}")
+        assert errors_of(repo_copy) == [], target
+        edit(repo_copy, CI, "      - name: injected\n", "      - name: done\n", 1)
+        (repo_copy / CI).write_text(
+            re.sub(
+                r"      - name: done\n        run: \|\n(?:          .*\n)+",
+                "",
+                (repo_copy / CI).read_text(encoding="utf-8"),
+            ),
+            encoding="utf-8",
+        )
+
+
+def test_makefile_variable_installer_and_env_lines_fail(repo_copy: Path) -> None:
+    append(repo_copy, "Makefile", "\nPIP = pip\n")
+    expect(repo_copy, "make variable that names an installer")
+    append(repo_copy, "Makefile", "export PIP_INDEX_URL=https://x.invalid/simple\n")
+    expect(repo_copy, "PIP_INDEX_URL")
+
+
+def test_shell_files_dockerfiles_and_local_actions_are_scanned(repo_copy: Path) -> None:
+    (repo_copy / "tools").mkdir(exist_ok=True)
+    write_new(repo_copy, "tools/setup.sh", "#!/bin/sh\npip install requests\n")
+    expect(repo_copy, "tools/setup.sh")
+    write_new(repo_copy, "Dockerfile", "FROM python:3.12\nRUN pip install requests\n")
+    expect(repo_copy, "FROM python:3.12 has no @sha256 digest")
+    expect(repo_copy, "Dockerfile:2")
+    (repo_copy / "tools" / "act").mkdir(parents=True)
+    write_new(
+        repo_copy,
+        "tools/act/action.yml",
+        "name: a\ndescription: d\nruns:\n  using: composite\n  steps:\n"
+        "    - shell: bash\n      run: pip install requests\n",
+    )
+    expect(repo_copy, "tools/act/action.yml")
+
+
+def test_script_command_strings_are_scanned(repo_copy: Path) -> None:
+    write_new(
+        repo_copy,
+        "scripts/_extra.py",
+        'import os, subprocess\nos.system("pip install requests")\n'
+        'subprocess.run("pip install x", shell=True, check=False)\n',
+    )
+    errors = errors_of(repo_copy)
+    assert sum("scripts/_extra.py:" in e for e in errors) >= 2
+
+
+def test_build_requires_direct_url_and_runtime_dependencies_fail(repo_copy: Path) -> None:
+    edit(
+        repo_copy,
+        "pyproject.toml",
+        'requires = ["hatchling>=1.25"]',
+        'requires = ["hatchling @ https://x.invalid/h.whl"]',
+    )
+    expect(repo_copy, "is a direct reference")
+    edit(repo_copy, "pyproject.toml", "dependencies = []", 'dependencies = ["requests"]')
+    expect(repo_copy, "dependencies must stay empty")
+    append(repo_copy, "pyproject.toml", "\n[tool.hatch.envs.default]\ndependencies = []\n")
+    expect(repo_copy, "tool.hatch.envs")
