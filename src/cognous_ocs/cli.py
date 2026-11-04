@@ -123,6 +123,13 @@ def _diagnostics_dir(declared: Path | None) -> Path | None:
     return None
 
 
+def _discard_ci_output(args_in: Sequence[str]) -> Path | None:
+    """A failed `ci` command line: clear its owned output, return the directory for diagnostics."""
+    from cognous_ocs import ci  # lazy: ci imports this module
+
+    return ci.discard_stale_outputs(list(args_in))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args_in = list(sys.argv[1:] if argv is None else argv)
     from cognous_ocs import passthrough  # lazy: passthrough imports modules that import this one
@@ -146,7 +153,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             reason_codes=[OCS_INPUT_INVALID],
             messages=[f"usage error: {exc}"],
         )
-        return _finish(result, fmt, None)
+        # A `ci` command line that failed to parse still must not leave an earlier run's output.
+        return _finish(result, fmt, _discard_ci_output(args_in))
     if args.version:
         sys.stdout.write(version_text())
         return 0
@@ -171,10 +179,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             reason_codes=[OCS_INPUT_INVALID],
             messages=[f"usage error: {exc}"],
         )
+        diag = _discard_ci_output(args_in)
     except PathRefused as exc:
         result = Result(
             command=args.command, outcome=INVALID, reason_codes=[OCS_PATHS], messages=[str(exc)]
         )
+        diag = _discard_ci_output(args_in)
     except Exception as exc:  # last-resort guard; content is never echoed
         result = Result(
             command=args.command,
@@ -182,6 +192,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             reason_codes=[OCS_INTERNAL],
             messages=[f"internal error ({type(exc).__name__})"],
         )
+        diag = _discard_ci_output(args_in)
     return _finish(result, fmt, diag, read_only=read_only)
 
 

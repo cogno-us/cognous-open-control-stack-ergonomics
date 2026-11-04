@@ -64,6 +64,9 @@ outputs:
   out-dir:
     description: The confined absolute output directory.
     value: ${{ steps.confine.outputs.out-dir }}
+  reports-published:
+    description: "'true' only when the output directory carries this run's marker and was uploaded; otherwise 'false'."
+    value: ${{ steps.gate.outputs.publish }}
 runs:
   using: composite
   steps:
@@ -105,6 +108,7 @@ runs:
         OCS_OUT_DIR: ${{ steps.confine.outputs.out-dir }}
         OCS_REPORT_MODE: ${{ steps.confine.outputs.report-mode }}
         OCS_UPLOAD_FULL: ${{ steps.confine.outputs.upload-full }}
+        OCS_RUN_NONCE: ${{ steps.confine.outputs.run-nonce }}
       run: |
         set +e
         bin="${OCS_ACTION_BIN:-cognous-ocs}"
@@ -119,12 +123,21 @@ runs:
         "$bin" "${args[@]}"
         code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
-        if [ -f "$OCS_OUT_DIR/ci-summary.md" ]; then cat "$OCS_OUT_DIR/ci-summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
         exit 0
+
+    # Upload gate: output is published (summary appended, files uploaded) only when it carries the
+    # marker of this run. Output found on disk by name alone is never trusted.
+    - id: gate
+      if: always()
+      shell: bash
+      env:
+        OCS_OUT_DIR: ${{ steps.confine.outputs.out-dir }}
+        OCS_RUN_NONCE: ${{ steps.confine.outputs.run-nonce }}
+      run: python3 "$GITHUB_ACTION_PATH/verify_run.py"
 
     # Minimal upload: only these named paths, never the whole directory.
     - id: upload-reports
-      if: always() && steps.confine.outputs.upload-reports == 'true' && steps.confine.outputs.out-dir != ''
+      if: always() && steps.gate.outputs.publish == 'true' && steps.confine.outputs.upload-reports == 'true' && steps.confine.outputs.out-dir != ''
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: ${{ steps.confine.outputs.upload-name }}
@@ -140,7 +153,7 @@ runs:
 
     # Explicit opt-in: the whole output directory, including copies of raw inputs.
     - id: upload-full
-      if: always() && steps.confine.outputs.upload-full == 'true' && steps.confine.outputs.out-dir != ''
+      if: always() && steps.gate.outputs.publish == 'true' && steps.confine.outputs.upload-full == 'true' && steps.confine.outputs.out-dir != ''
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: ${{ steps.confine.outputs.upload-name }}-full

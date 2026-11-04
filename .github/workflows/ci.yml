@@ -164,14 +164,28 @@ jobs:
           non-assurance: "true"
           out-dir: neg-crlf
           upload-reports: "false"
+      - name: Plant a fake success in an output directory
+        run: |
+          mkdir -p neg-planted/evidence
+          echo '{"planted": "fake success"}' > neg-planted/evidence/evidence-pack.json
+          echo '{"outcome": "pass", "planted": true}' > neg-planted/ci-summary.json
+      - id: planted
+        continue-on-error: true
+        uses: ./.github/actions/ocs
+        with:
+          workflow: examples/sample-repo/workflow
+          non-assurance: "true"
+          install: preinstalled
+          out-dir: neg-planted
       - name: Every negative case failed for the right reason
         env:
-          OUTCOMES: ${{ steps.mismatch.outcome }} ${{ steps.noprofile.outcome }} ${{ steps.outside.outcome }} ${{ steps.crlf.outcome }}
+          OUTCOMES: ${{ steps.mismatch.outcome }} ${{ steps.noprofile.outcome }} ${{ steps.outside.outcome }} ${{ steps.crlf.outcome }} ${{ steps.planted.outcome }}
           MISMATCH_EXIT: ${{ steps.mismatch.outputs.exit-code }}
+          PLANTED_PUBLISHED: ${{ steps.planted.outputs.reports-published }}
         run: |
           python3 - <<'PY'
           import json, os, pathlib
-          assert os.environ["OUTCOMES"] == "failure failure failure failure", os.environ["OUTCOMES"]
+          assert os.environ["OUTCOMES"] == "failure failure failure failure failure", os.environ["OUTCOMES"]
           def diag(directory):
               return json.loads(pathlib.Path(directory, "ci-diagnostics.json").read_text())
           d = diag("neg-mismatch")
@@ -182,4 +196,9 @@ jobs:
           d = diag("neg-crlf")
           assert (d["exit_code"], d["reason_codes"]) == (2, ["OCS_PATHS"]), d
           assert not pathlib.Path("/etc/ocs-out").exists()
+          # a planted success is cleared before the (refused) run and is never uploaded
+          assert not pathlib.Path("neg-planted/evidence").exists()
+          assert not pathlib.Path("neg-planted/ci-summary.json").exists()
+          assert diag("neg-planted")["reason_codes"] == ["OCS_VERSION"]
+          assert os.environ["PLANTED_PUBLISHED"] == "false", os.environ["PLANTED_PUBLISHED"]
           PY
