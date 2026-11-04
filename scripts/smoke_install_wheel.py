@@ -1,7 +1,8 @@
 """Clean-virtualenv install smoke test.
 
-Installs the built wheel (with the pinned `stack` extra, which needs network at install time
-only) into a fresh venv, then runs `cognous-ocs --version` (no `ocs` script may exist) and the customer-service demo with the
+Installs the built wheel into a fresh venv from the committed locks (hashed build toolchain and
+PyPI dependencies, then the first-party components pinned by SHA, then the wheel with --no-deps;
+network at install time only), then runs `cognous-ocs --version` (no `ocs` script may exist) and the customer-service demo with the
 network namespace removed (`unshare -n`). Exit 0 within the time limit and a blocked send in
 the rendered HTML are required. If no network-namespace tool works the smoke test FAILS;
 set OCS_SMOKE_ALLOW_NO_NETNS=1 to run without isolation (never in CI).
@@ -22,8 +23,11 @@ LIMIT_SECONDS = 120
 BLOCKED = 'chip blocked">blocked</span> <code>email_send</code>'
 
 
-def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, capture_output=True, text=True, check=False)
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, capture_output=True, text=True, check=False, cwd=cwd)
 
 
 def netns_prefix() -> list[str] | None:
@@ -47,19 +51,50 @@ def main(argv: list[str] | None = None) -> int:
     venv = work / "venv"
     if venv.exists():
         shutil.rmtree(venv)
+    py = str(venv / "bin" / "python")
+    wheel = str(wheels[0].resolve())
+    # Lock files are named relative to the repository root, where these commands run.
     steps = [
         [sys.executable, "-m", "venv", str(venv)],
         [
-            str(venv / "bin" / "python"),
+            py,
             "-m",
             "pip",
             "install",
             "-q",
-            f"{wheels[0].resolve()}[stack]",
+            "--require-hashes",
+            "--no-deps",
+            "--no-build-isolation",
+            "-r",
+            "requirements/build.txt",
         ],
+        [
+            py,
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "--require-hashes",
+            "--no-deps",
+            "--no-build-isolation",
+            "-r",
+            "requirements/stack.txt",
+        ],
+        [
+            py,
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "--no-deps",
+            "--no-build-isolation",
+            "-r",
+            "requirements/stack-vcs.txt",
+        ],
+        [py, "-m", "pip", "install", "-q", "--no-deps", "--no-build-isolation", wheel],
     ]
     for cmd in steps:
-        done = run(cmd)
+        done = run(cmd, cwd=ROOT)
         if done.returncode != 0:
             print(f"smoke: setup failed: {' '.join(cmd[:4])}\n{done.stderr[-2000:]}")
             return 1

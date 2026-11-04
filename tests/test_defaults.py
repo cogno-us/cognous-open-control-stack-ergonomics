@@ -42,12 +42,12 @@ def test_every_extra_has_a_lock_file(pyproject: dict[str, Any]) -> None:
 
 
 def test_stack_lock_pins_the_same_commits_as_ocs_lock() -> None:
-    text = (ROOT / "requirements" / "stack.txt").read_text(encoding="utf-8")
+    text = (ROOT / "requirements" / "stack-vcs.txt").read_text(encoding="utf-8")
     found = set(re.findall(r"@ git\+https://github\.com/[^@\s]+@([0-9a-f]{40})", text))
     assert found == {c.sha for c in COMPONENTS.values()}
 
 
-@pytest.mark.parametrize("extra", ["dev", "stack"])
+@pytest.mark.parametrize("extra", ["dev", "stack", "build"])
 def test_locked_packages_are_pinned_exactly_with_hashes(extra: str) -> None:
     text = (ROOT / "requirements" / f"{extra}.txt").read_text(encoding="utf-8")
     entries = re.split(r"\n(?=\S)", text)
@@ -57,4 +57,4 @@ def test_locked_packages_are_pinned_exactly_with_hashes(extra: str) -> None:
         assert "--hash=sha256:" in entry, entry.splitlines()[0]
     for line in text.splitlines():
         if line and not line[0].isspace() and not line.startswith("#"):
-            assert "==" in line or " @ git+https://" in line, f"unpinned requirement: {line}"
+            assert "==" in line, f"unpinned requirement: {line}"

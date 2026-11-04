@@ -147,7 +147,7 @@ The four component pins are in `src/cognous_ocs/lock.py` and in the `stack` extr
 ## Tests
 
 ```
-pip install -e ".[dev,stack]"
+make install-dev  # installs from the committed locks only (docs/development.md)
 make check        # lint, strict types, lock freshness, tests (network off, 80% coverage floor), docs alignment, claim boundary, examples parity, schema snapshots, action hygiene, build
 ```
 

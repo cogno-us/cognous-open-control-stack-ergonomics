@@ -1,6 +1,6 @@
 # Development gates
 
-Everything here runs offline except installing the pinned component extra. Nothing publishes
+Everything here runs offline except installing from the committed locks. Nothing publishes
 anything: this repository has no upload target, and `make release-publish-check` fails while
 `release-state.json` says publication is not authorized.
 
@@ -8,8 +8,19 @@ anything: this repository has no upload target, and `make release-publish-check`
 
 ```
 python -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev,stack]"
+make install-dev
 ```
+
+`make install-dev` installs only from the committed locks in `requirements/` (no live dependency
+resolution): the hashed `dev` and `stack` locks with `--require-hashes --no-deps`, then the four
+first-party components from `requirements/stack-vcs.txt` (pinned by full commit SHA; pip cannot
+verify hashes of VCS requirements, so they are a separate `--no-deps` step), then this checkout
+editable with `--no-deps`. Every step uses `--no-build-isolation`, so the build toolchain
+(hatchling, editables, setuptools, wheel) is the locked one. Do not run `pip install -e ".[dev,stack]"`:
+it resolves the pyproject ranges and the build backend from the live index, and
+`make lock` (`scripts/check_dependency_integrity.py`) refuses such commands in CI, the composite
+action, the Makefile and the scripts. See [testing](testing.md#locks-one-per-extra) for the policy and
+how to update the locks.
 
 ## Targets
 
@@ -18,7 +29,8 @@ pip install -e ".[dev,stack]"
 | `make check` | Fixed order: `lint`, `type`, `lock`, `tests`, `docs`, `claims`, `examples`, `schemas`, `actions`, `build`. Stops at the first failure. |
 | `make lint` | `ruff check` and `ruff format --check`. |
 | `make type` | `mypy` in strict mode over `src`, `tests` and `scripts`. |
-| `make lock` | The `stack` extra pins equal `src/cognous_ocs/lock.py` (and any `requirements*.lock` file agrees). No lock files exist yet. |
+| `make install-dev` | Installs the development environment from the committed locks only (see Setup). |
+| `make lock` | `scripts/check_lock_freshness.py`: the `stack` extra pins equal `src/cognous_ocs/lock.py`, every hashed lock pin has real sha256 hashes and a version inside its pyproject range. `scripts/check_dependency_integrity.py`: every pip/uv install command is a lock-consuming form, VCS refs are full SHAs from the allow-list, no floating action refs, locked build toolchain, no alternate indexes. |
 | `make tests` | pytest with sockets disabled in-process and an 80% coverage floor (both set in `pyproject.toml`). |
 | `make docs` | Local links and anchors resolve, every docs page is linked from the README, versions and the command and exit-code tables match the code. |
 | `make claims` | The claim-boundary check (below). |

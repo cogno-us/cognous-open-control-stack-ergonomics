@@ -1,0 +1,9 @@
+# First-party components, pinned by full commit SHA (the same commits as src/cognous_ocs/lock.py).
+# pip cannot verify hashes of VCS requirements, so this file is installed on its own, after the hashed
+# PyPI locks, with `pip install --no-deps --no-build-isolation -r requirements/stack-vcs.txt`.
+# Hand-maintained: scripts/check_lock_freshness.py and scripts/check_dependency_integrity.py require
+# exactly one strict line per component, matching cognous_ocs.lock. See docs/testing.md.
+agent-action-manifest @ git+https://github.com/cogno-us/cognous-action-manifest@fa170815ef96a54c233d0dd9da821b60debabf8b
+agent-control-plane @ git+https://github.com/cogno-us/cognous-control-plane@0a41faa972699f7ec3063967a14cd9bdd3e67d27
+agent-governance-evidence-pack @ git+https://github.com/cogno-us/cognous-governance-evidence-pack@a3ebbb90559a44a88855139a182649d3792bb1ca
+agent-replay-bundle @ git+https://github.com/cogno-us/cognous-replay-bundle@028f63d1c001f99580583888fa4b4e46d77a267b

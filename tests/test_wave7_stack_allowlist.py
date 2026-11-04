@@ -1,4 +1,4 @@
-"""Wave 7 T1-B: requirements/stack.txt is an allow-list; continuations are joined as pip does."""
+"""Wave 7 T1-B: requirements/stack-vcs.txt is an allow-list; continuations are joined as pip does."""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ HEX = "a" * 40
 
 def run(tmp_path: Path, extra: str) -> list[str]:
     (tmp_path / "requirements").mkdir(exist_ok=True)
-    text = (REPO_ROOT / "requirements" / "stack.txt").read_text(encoding="utf-8") + extra
-    (tmp_path / "requirements" / "stack.txt").write_text(text, encoding="utf-8")
+    text = (REPO_ROOT / "requirements" / "stack-vcs.txt").read_text(encoding="utf-8") + extra
+    (tmp_path / "requirements" / "stack-vcs.txt").write_text(text, encoding="utf-8")
     errors: list[str] = lock.check_stack_requirements(tmp_path, WANT)
     return errors
 
@@ -49,6 +49,9 @@ def test_trailing_backslash_at_eof_fails(tmp_path: Path) -> None:
     assert any("strict" in e for e in run(tmp_path, "evil==1.0 \\"))
 
 
-def test_real_file_and_plain_indexed_pin_pass(tmp_path: Path) -> None:
+def test_real_file_and_comments_pass_but_indexed_pins_do_not(tmp_path: Path) -> None:
+    # Changed with csf_fd18fac96a9c68c8d48ec390: the VCS pin file holds only the SHA-pinned
+    # components; hashed PyPI pins live in requirements/<extra>.txt, so an indexed pin is refused here.
     assert run(tmp_path, "") == []
-    assert run(tmp_path, "extra-dist==1.2.3\n# a comment\n\n    # indented comment\n") == []
+    assert run(tmp_path, "# a comment\n\n    # indented comment\n") == []
+    assert any("strict" in e for e in run(tmp_path, "extra-dist==1.2.3\n"))
